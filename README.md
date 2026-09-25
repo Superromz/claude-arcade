@@ -1,136 +1,144 @@
-# 🎮 Claude Arcade
+# Claude Arcade
 
-Turn Claude Code into a game. While Claude thinks, plans, edits and runs commands you get an
-animated HUD instead of plain text: XP, levels, HP, combos, achievements, and your subagents
-show up as party members.
+**A fun side quest while you work.** Claude Arcade is an open-source Claude Code plugin that turns
+your terminal into a retro RPG. The first time you open it you create a hero. From then on, every
+prompt you send is a quest, every failing command is a monster, and every agent Claude launches
+joins your party. Your hero levels up from your real Claude usage: tools, finished tasks and
+tokens.
 
-```
-🔮 ✧✦  Consulting the oracle…  12s                         ⚔ party 2 🧝🧙
-Lv 7 Code Knight ██████░░░░ 2,140/2,800 XP  ❤ ▰▰▰▰▰▱  🔥 x12 combo  ✦ mana 66%  💰 1.20g  Opus
-```
+It's Zork, 80s 8-bit games and the virtual pet you had to keep alive, rolled into one and living
+next to Claude in your terminal. Play along while you wait, or just glance over and watch your
+hero fight.
 
-It uses only ANSI text, the Claude Code status line and hooks, so it works in **any terminal**:
-Warp, Windows Terminal, iTerm2, Kitty, VS Code, etc. The `retro` theme is pure ASCII for fonts
-without emoji.
+- **All in the CLI.** Pixel art drawn with half-block characters in 24-bit color. No browser, no
+  window, no account.
+- **Built for developers.** XP comes only from real work, so your level actually means something.
+- **Open source, zero dependencies.** Plain Node 18+, MIT licensed.
+- **Local and private.** Everything stays in `~/.claude/arcade/`. Nothing is sent anywhere.
 
-## 🕹 The game pane
+## Screenshots
 
-Run `/claude-arcade:play` to open the game in a split pane (in Warp: `Ctrl+Shift+D`, then paste the
-command it copies for you). It's pixel art rendered with half-block characters in 24-bit color.
+![LEVEL UP banner over a battle, with the hero card and quest log](docs/images/level-up.png)
 
-**Create your hero.** On first launch (or press `c`) pick a name, class, colors, skin, hair and an
-accessory. Each class has its own look, weapon and XP bonus:
+| Boss fights on long tasks | Your hero camps between tasks |
+|---|---|
+| ![A mage fighting Ignarok the Magma Drake in the lava cave](docs/images/boss-drake.png) | ![Each class at the campfire doing its own activity](docs/images/camp.png) |
 
-| Class | Weapon | Bonus |
-|---|---|---|
-| Mage | staff | +50% XP from commands |
-| Ranger | bow | +50% XP from reading & searching |
-| Knight | sword & shield | +50% XP from edits |
-| Warlock | familiar | +50% XP from agents |
-| Bard | lute | +50% XP from web, MCP & planning |
-| Rogue | daggers | double combo bonus |
+| Create your hero | Spend gold in the Shop |
+|---|---|
+| ![The character creator](docs/images/creator.png) | ![The Shop tab with hats and a hero preview](docs/images/shop-tab.png) |
 
-**Battle while Claude works.** When a task starts, waves of monsters attack (slimes, bats,
-skeletons, goblins, and a warlord boss every 5th wave). Every tool call Claude makes is a spell
-cast; your agents fight as companions. New spells unlock as you level: Fireball (3), Frost Shard (5),
-Chain Lightning (8), Meteor (12), Starfall (18). Kills drop gold and XP; practice waves give gold only.
+| Hero roster | The world changes as you level |
+|---|---|
+| ![Three saved heroes on the roster screen](docs/images/roster.png) | ![Forest, lava cave, castle and space backgrounds](docs/images/biomes.png) |
 
-**Play along.** `1`-`6` or `space` cast from your hotbar (with cooldowns), click monsters to strike
-them, `w` summons a practice wave when idle, `tab`/`←→` switch views (Adventure, Hero, Party,
-Trophies), `t` theme, `p` pick session, `q` quit.
+## Features at a glance
 
-**Real progress.** XP comes from tool use, finished tasks, monsters slain, and the actual tokens in
-your Claude Code transcripts. Your stats (STR, INT, DEX, WIS, CHA) grow from how you use Claude.
-## Preview it first
-
-```sh
-node demo.js          # rpg theme
-node demo.js space
-node demo.js retro
-```
+- **Your hero.** Six classes (Mage, Ranger, Knight, Warlock, Bard, Rogue), each with a main stat,
+  an XP bonus and its own attack animations. Pick colors, skin, hair and an accessory in the
+  character creator. Keep several heroes, each with their own progress.
+- **Battles that follow Claude.** When Claude starts a task, waves of monsters attack. Every tool
+  call casts a matching spell. Long tasks bring a boss with phases.
+- **Spellbook.** Fireball, Frost Shard, Chain Lightning, Meteor and Starfall unlock as you level.
+  Cast them yourself from the hotbar, or click monsters to strike them.
+- **Companions.** Agents that Claude launches join the fight as hero classes, each with a battle
+  role.
+- **A camp between tasks.** When Claude is idle your hero sits by the fire doing a class activity,
+  then falls asleep. A board shows today's quests. While Claude works, a thought bubble shows what
+  your hero is up to.
+- **Real progression.** XP from tools, finished tasks, monsters slain during real tasks, and your
+  actual token usage. LEVEL UP banners, 13 achievements, a daily streak, and stats per project.
+- **A Shop.** Spend gold on hats, capes, auras, pets and weapon glows, or on battle buffs. Never on
+  XP.
+- **An animated status line.** A two-row HUD under Claude's prompt shows what your hero is doing,
+  your level, XP, HP, combo, "mana" (context left) and what the session has cost.
+- **Approve Claude from the game.** Permission requests can pop up in the game pane as an
+  encounter. Press Y or N and keep playing.
+- **Three themes.** Dungeon Crawl (rpg), Star Command (space) and 8-Bit Arcade (retro, ASCII-safe).
 
 ## Install
 
-Requires Node.js 18+.
+You need Claude Code and Node.js 18 or newer. In Claude Code, run:
 
-```sh
+```
 /plugin marketplace add superromz/claude-arcade
 /plugin install claude-arcade@claude-arcade
-/claude-arcade:setup            # or: /claude-arcade:setup space
+/claude-arcade:setup
 ```
 
-To install from a local clone instead: `/plugin marketplace add /path/to/claude-arcade`.
+`setup` takes an optional theme: `/claude-arcade:setup space` or `/claude-arcade:setup retro`. The
+plugin installs at user scope, so it works in every project.
 
-`setup` is needed because plugins can't set the main status line or spinner by themselves. It
-edits `~/.claude/settings.json` (`statusLine`, `subagentStatusLine`, `spinnerVerbs`,
-`spinnerTipsOverride`) and saves your previous values so `/claude-arcade:uninstall` can put
-them back.
+Setup adds the status line and themed spinner to `~/.claude/settings.json` and backs up whatever was
+there before. `/claude-arcade:uninstall` puts your old settings back. See
+[Getting Started](docs/wiki/Getting-Started.md) for details and local installs.
 
-## What you get
+## Quick start
 
-| Claude is… | HUD shows (rpg theme) |
+1. Split your terminal so the game sits next to Claude. In Warp press `Ctrl+Shift+D`
+   (`Cmd+D` on macOS). In Windows Terminal, `/claude-arcade:play` opens the split for you.
+2. In the new pane, run:
+
+   ```sh
+   arcade
+   ```
+
+3. Create your hero, then go back to Claude and give it a task. The monsters arrive when Claude
+   starts working.
+
+Not sure how to split your terminal? Run `/claude-arcade:play` and it will tell you (and copy the
+command to your clipboard).
+
+## Controls
+
+| Key | Game pane |
 |---|---|
-| thinking | 🔮 Consulting the oracle |
-| planning / todos | 📜 Drawing the battle map |
-| reading files | 🧭 Scouting `auth.ts` |
-| grep / glob | 🗺 Searching the dungeon |
-| editing | ⚒ Forging `auth.ts` |
-| running commands | ⚡ Casting `Run the test suite` |
-| web / MCP | 🦅 Sending the scout eagle |
-| launching agents | 🌀 Summoning the party |
-| a tool failed | 💥 Took a hit (−10 HP) |
-| waiting on you | 🛡 Awaiting your command |
-| done | 🏆 Quest complete! +XP |
+| `1`-`6` | Cast a spell from the hotbar (1.5× damage, with cooldowns) |
+| `space` | Basic attack |
+| Mouse click | Strike a monster, cast from the hotbar, or switch tabs |
+| `w` | Summon a practice wave (gold only, no XP) |
+| `tab` / `←` `→` | Switch tab: Adventure, Hero, Party, Trophies, Shop, Projects (or click a tab) |
+| `h` | Hero roster (switch, create or delete heroes) |
+| `c` | Change your hero's look |
+| `t` | Next theme |
+| `p` | Follow a different Claude session |
+| `q` / `Esc` | Quit |
 
-- **XP & levels**: every tool call earns XP (edits 5, commands 3, agents 10…), finishing a turn
-  earns a bonus, and long combos earn extra. A new title every level.
-- **HP**: failed tool calls cost HP; finishing turns heals.
-- **Party**: each running subagent gets a class (Ranger, Sage, Paladin, Mage…) with an animated
-  row and a stamina bar for its context usage.
-- **Mana & cost**: mana is the context window Claude has left; the session's dollar cost shows as "$1.20 spent".
-- **Achievements**: 13 to unlock, from *First Blood* to *Guild Master*.
-- **Spinner**: themed verbs ("Rolling for initiative", "Brewing potions"…) and tips.
-- **Toasts**: varied, themed messages with an end-of-turn summary ("Forged 3 files, cast 2 spells. +48 XP in 41s. Flawless!"). Only three hooks run in the foreground, so tool calls don't add "running hook" lines.
+In the Shop, the arrow keys browse, `Enter` buys or equips, and `u` unequips. When a permission
+request shows up: `Y` allows it once, `N` denies it, `C` sends it back to Claude's normal dialog. The full list is on [Commands and Controls](docs/wiki/Commands-and-Controls.md).
 
-## Commands
+## Privacy
 
-| Command | |
-|---|---|
-| `/claude-arcade:setup [theme]` | Install the HUD |
-| `/claude-arcade:play` | Open the interactive game pane |
-| `/claude-arcade:theme rpg\|space\|retro` | Switch theme |
-| `/claude-arcade:stats` | Hero sheet and achievements |
-| `/claude-arcade:toggle toasts\|ascii` | Turn toasts or emoji off |
-| `/claude-arcade:uninstall` | Restore your old status line and spinner |
+Claude Arcade runs entirely on your machine. It reads Claude Code's hook events and your local
+transcripts (only to count tokens), and it writes to `~/.claude/arcade/`. It makes no network
+requests. See [Privacy and Data](docs/wiki/Privacy-and-Data.md).
 
-Progress lives in `~/.claude/arcade/`. After updating the plugin, run `/claude-arcade:setup`
-again to refresh the status line scripts.
+## Documentation
 
-## Development
+The wiki explains how everything works:
 
-```sh
-npm test        # end-to-end tests against a throwaway HOME
-npm run demo
-```
+- [Home](docs/wiki/Home.md) and [Getting Started](docs/wiki/Getting-Started.md)
+- [Heroes and Classes](docs/wiki/Heroes-and-Classes.md), [Hero Roster](docs/wiki/Hero-Roster.md)
+- [Combat and Spells](docs/wiki/Combat-and-Spells.md), [Companions](docs/wiki/Companions.md)
+- [Progression and XP](docs/wiki/Progression-and-XP.md), [Project Stats](docs/wiki/Project-Stats.md)
+- [Biomes and Themes](docs/wiki/Biomes-and-Themes.md), [Status Line and Toasts](docs/wiki/Status-Line-and-Toasts.md)
+- [In-Game Approvals](docs/wiki/In-Game-Approvals.md), [Commands and Controls](docs/wiki/Commands-and-Controls.md)
+- [Shop](docs/wiki/Shop.md), [Camp and Celebrations](docs/wiki/Camp-and-Celebrations.md), [Roadmap](docs/wiki/Roadmap.md), [FAQ](docs/wiki/FAQ.md)
+- For contributors: [Architecture](docs/wiki/Architecture.md) and [Contributing](CONTRIBUTING.md)
 
-Layout:
+## What's next
 
-```
-.claude-plugin/marketplace.json     this repo is also its own marketplace
-plugins/claude-arcade/
-  .claude-plugin/plugin.json
-  hooks/hooks.json                  every event -> scripts/hook.js
-  commands/*.md                     slash commands -> scripts/arcade.js
-  scripts/lib.js                    state, XP, themes, achievements
-  scripts/hook.js                   updates game state, emits toasts
-  scripts/statusline.js             animated two-row HUD
-  scripts/subagents.js              party member rows for subagents
-  scripts/game.js                   interactive game pane
-  scripts/messages.js               flavor text
-```
+Class skill kits, a skill tree with paragon levels, recruitable companions, an HD mode, and a
+global leaderboard where you can compare your hero with everyone else's (and fight them in async
+PvP). See the [Roadmap](ROADMAP.md) and the [Changelog](CHANGELOG.md).
 
-Add a theme by adding an entry to `THEMES` in `scripts/lib.js`.
+## Contributing
+
+Contributions are welcome: new monsters, themes, spells, fixes and docs. The game is plain Node
+with no dependencies, so `npm test` is all you need to get going. Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) first. Two rules matter most: update the docs in the same change,
+and XP only ever comes from real Claude usage.
 
 ## License
 
-MIT
+[MIT](LICENSE)
