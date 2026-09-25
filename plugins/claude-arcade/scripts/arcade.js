@@ -31,6 +31,29 @@ function installScripts() {
   for (const f of fs.readdirSync(__dirname)) if (f.endsWith('.js') && !['hook.js', 'arcade.js'].includes(f)) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
 }
 
+// A short `arcade` command on PATH that starts the game pane. Windows: a .cmd
+// next to npm's global shims (already on PATH with Node). macOS/Linux:
+// ~/.local/bin/arcade. Returns where it went, or null if no PATH dir fit.
+function installCommand() {
+  const game = path.join(BIN, 'game.js');
+  const dirs = (process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const onPath = (d) => dirs.some((p) => path.resolve(p).toLowerCase() === path.resolve(d).toLowerCase());
+  try {
+    if (process.platform === 'win32') {
+      const npmDir = path.join(process.env.APPDATA || '', 'npm');
+      if (!process.env.APPDATA || !fs.existsSync(npmDir) || !onPath(npmDir)) return null;
+      const target = path.join(npmDir, 'arcade.cmd');
+      fs.writeFileSync(target, `@echo off\r\nnode "${game}" %*\r\n`);
+      return target;
+    }
+    const local = path.join(os.homedir(), '.local', 'bin');
+    fs.mkdirSync(local, { recursive: true });
+    const target = path.join(local, 'arcade');
+    fs.writeFileSync(target, `#!/bin/sh\nexec node "${game}" "$@"\n`, { mode: 0o755 });
+    return onPath(local) ? target : null;
+  } catch { return null; }
+}
+
 function setup(themeName) {
   const cfg = L.loadConfig();
   if (themeName) setTheme(cfg, themeName);
@@ -49,15 +72,16 @@ function setup(themeName) {
   L.saveConfig(cfg);
   console.log(`Claude Arcade installed with the "${L.theme(cfg).name}" theme.`);
   console.log(`Updated ${SETTINGS} (previous values saved to ${BACKUP}).`);
-  console.log(`Game pane: run /claude-arcade:play, or in any terminal pane: ${node('game.js')}`);
+  const cmd = installCommand();
+  console.log(cmd ? 'Game pane: split your terminal and run: arcade' : `Game pane: run /claude-arcade:play, or in any terminal pane: ${node('game.js')}`);
 }
 
 // Open the game next to Claude. Windows Terminal can split itself; other
 // terminals (Warp, iTerm, VS Code…) get the command on the clipboard.
 function play() {
   const { spawn, execSync } = require('child_process');
-  const cmd = node('game.js');
   installScripts();
+  const cmd = installCommand() ? 'arcade' : node('game.js');
   if (process.env.WT_SESSION) {
     spawn('wt.exe', ['-w', '0', 'sp', '-V', '-s', '0.45', 'node', path.join(BIN, 'game.js')], { detached: true, stdio: 'ignore' }).unref();
     console.log('Opened the game in a Windows Terminal split pane.');
@@ -83,6 +107,9 @@ function uninstall() {
   }
   L.writeJSON(SETTINGS, settings);
   try { fs.unlinkSync(BACKUP); } catch {}
+  for (const f of [path.join(process.env.APPDATA || '', 'npm', 'arcade.cmd'), path.join(os.homedir(), '.local', 'bin', 'arcade')]) {
+    try { if (fs.readFileSync(f, 'utf8').includes('arcade')) fs.unlinkSync(f); } catch {}
+  }
   console.log('Restored your previous status line and spinner settings. XP is kept in ' + L.HOME);
 }
 

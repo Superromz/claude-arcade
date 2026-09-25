@@ -13,7 +13,8 @@ const { execFileSync } = require('child_process');
 const SCRIPTS = path.join(__dirname, '..', 'plugins', 'claude-arcade', 'scripts');
 const { visWidth } = require(path.join(SCRIPTS, 'lib.js'));
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'arcade-'));
-const env = { ...process.env, HOME: home, USERPROFILE: home };
+// APPDATA too, so setup never writes the arcade shim into the real npm dir.
+const env = { ...process.env, HOME: home, USERPROFILE: home, APPDATA: home };
 
 const run = (script, input, args = []) =>
   execFileSync(process.execPath, [path.join(SCRIPTS, script), ...args], { input: JSON.stringify(input), env, encoding: 'utf8' });
