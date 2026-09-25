@@ -7,7 +7,7 @@
       "name": "claude-arcade",
       "source": "./plugins/claude-arcade",
       "description": "Gamified Claude Code HUD: animated status line, themed spinner, XP, levels, achievements and subagent party.",
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }

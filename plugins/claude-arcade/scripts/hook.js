@@ -51,12 +51,17 @@ function main() {
         if (input.source === 'startup' || input.source === 'resume') toasts.push(`🎮 ${msg}`);
         break;
       }
-      case 'UserPromptSubmit':
+      case 'UserPromptSubmit': {
+        // Background agent/task notifications arrive as synthetic prompts; they
+        // continue the current quest instead of starting a new one.
+        const synthetic = /^\s*</.test(String(input.prompt || ''));
+        set('thinking');
+        if (synthetic) break;
         ses.combo = 0;
         ses.turn = { start: now, fails: 0, xp: 0 };
-        set('thinking');
-        log('prompt', 'A new quest begins…');
+        log('prompt', `New quest: ${String(input.prompt || '').replace(/\s+/g, ' ').slice(0, 60)}`);
         break;
+      }
       case 'PreToolUse': {
         const name = input.tool_name || '';
         const mode = L.modeForTool(name);

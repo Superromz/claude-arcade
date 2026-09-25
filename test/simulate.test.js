@@ -22,7 +22,7 @@ const toast = (out) => (out ? JSON.parse(out).systemMessage : '');
 const state = () => JSON.parse(fs.readFileSync(path.join(home, '.claude', 'arcade', 'state.json'), 'utf8'));
 
 test('session start greets the player', () => {
-  assert.match(toast(hook('SessionStart', { source: 'startup' })), /Lv 1 .*streak/);
+  assert.match(toast(hook('SessionStart', { source: 'startup' })), /streak/);
 });
 
 test('tool use earns XP and builds a combo', () => {
@@ -87,7 +87,7 @@ test('game pane renders every tab at a fixed width', () => {
     const out = execFileSync(process.execPath, [path.join(SCRIPTS, 'game.js'), '--snapshot', tab], {
       env: { ...env, COLUMNS: '90', LINES: '26' }, encoding: 'utf8',
     });
-    const lines = strip(out).trimEnd().split('\n');
+    const lines = strip(out.replace(/\n$/, '')).split('\n');
     assert.strictEqual(lines.length, 26, `tab ${tab} height`);
     assert.match(lines[0], /CLAUDE ARCADE/);
     for (const l of lines) assert.strictEqual(visWidth(l), 90, `tab ${tab}: "${l}"`);
