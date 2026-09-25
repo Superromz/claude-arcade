@@ -27,7 +27,7 @@ function applySpinner(settings, t) {
 // Copy scripts to a stable path: the plugin dir changes on every update.
 function installScripts() {
   fs.mkdirSync(BIN, { recursive: true });
-  for (const f of ['lib.js', 'messages.js', 'statusline.js', 'subagents.js', 'game.js', 'pixel.js']) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
+  for (const f of ['lib.js', 'messages.js', 'statusline.js', 'subagents.js', 'game.js', 'pixel.js', 'character.js', 'sprites.js']) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
 }
 
 function setup(themeName) {

@@ -108,6 +108,49 @@ test('play prints a launch command outside Windows Terminal', () => {
   assert.match(out, /game\.js/);
 });
 
+test('character creator renders at a fixed width', () => {
+  const strip = (s) => s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');
+  const out = execFileSync(process.execPath, [path.join(SCRIPTS, 'game.js'), '--snapshot', 'create'], {
+    env: { ...env, COLUMNS: '100', LINES: '30', ARCADE_WARMUP: '3' }, encoding: 'utf8',
+  });
+  const lines = strip(out.replace(/\n$/, '')).split('\n');
+  assert.strictEqual(lines.length, 30);
+  assert.match(lines[0], /Create your hero/);
+  for (const l of lines) assert.strictEqual(visWidth(l), 100, l);
+});
+
+test('class bonuses and token XP', () => {
+  const C = require(path.join(SCRIPTS, 'character.js'));
+  const knight = C.defaultCharacter('knight');
+  assert.strictEqual(C.xpFor(knight, 'editing', 5, 0), 8);
+  assert.strictEqual(C.xpFor(knight, 'running', 3, 0), 3);
+  assert.strictEqual(C.xpFor(C.defaultCharacter('rogue'), 'running', 3, 20), 7);
+  // Usage lines repeat per content block; each message id counts once.
+  const tr = path.join(home, 'transcript.jsonl');
+  const usage = { input_tokens: 100, cache_creation_input_tokens: 2900, output_tokens: 300 };
+  fs.writeFileSync(tr, [1, 2].map(() => JSON.stringify({ message: { id: 'm1', usage } })).join('\n') + '\n');
+  const offsets = {};
+  assert.deepStrictEqual(C.readTokens(tr, offsets, 'k'), { input: 3000, output: 300 });
+  assert.deepStrictEqual(C.readTokens(tr, offsets, 'k'), { input: 0, output: 0 }); // incremental
+  assert.strictEqual(C.tokenXp({ input: 3000, output: 300 }), 3);
+});
+
+test('spells unlock by level and hit harder when stronger', () => {
+  const C = require(path.join(SCRIPTS, 'character.js'));
+  assert.strictEqual(C.spellFor(1, 'running', 1).id, 'basic');
+  assert.strictEqual(C.spellFor(9, 'running', 1).id, 'chain');
+  assert.ok(C.damage(C.SPELLS[0], 10, 20) > C.damage(C.SPELLS[0], 1, 5));
+});
+
+test('stop hook awards token XP from the transcript', () => {
+  const tr = path.join(home, 'transcript2.jsonl');
+  fs.writeFileSync(tr, JSON.stringify({ message: { id: 'x', usage: { input_tokens: 30000, output_tokens: 1500 } } }) + '\n');
+  hook('UserPromptSubmit', { prompt: 'hello' });
+  const msg = toast(hook('Stop', { transcript_path: tr, session_id: 's2' }));
+  assert.match(msg, /20 from tokens/);
+  assert.strictEqual(state().tokens.output, 1500);
+});
+
 test('setup and uninstall round-trip user settings', () => {
   const settingsFile = path.join(home, '.claude', 'settings.json');
   fs.writeFileSync(settingsFile, JSON.stringify({ model: 'opus', statusLine: { type: 'command', command: 'mine' } }));

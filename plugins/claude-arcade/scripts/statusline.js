@@ -43,6 +43,7 @@ function main() {
 
   // Row 2: character sheet.
   const lvl = L.levelFor(state.xp);
+  const hero = require('./character').getCharacter(cfg);
   const lo = L.xpForLevel(lvl), hi = L.xpForLevel(lvl + 1);
   const xpBar = paint('yellow', bar((state.xp - lo) / (hi - lo), 10, ascii ? '#' : '█', ascii ? '-' : '░'));
   const hp = ses.hp ?? 100;
@@ -50,14 +51,14 @@ function main() {
   const hpBar = paint(hpColor, bar(hp / 100, 6, ascii ? '=' : '▰', ascii ? '.' : '▱'));
 
   const parts = [
-    `${paint('bold', `Lv ${lvl}`)} ${paint('magenta', L.titleFor(t, lvl))} ${xpBar} ${paint('gray', `${fmt(state.xp)}/${fmt(hi)} ${t.xpLabel}`)}`,
+    `${hero ? paint('bold', hero.name) + ' ' : ''}${paint('bold', `Lv ${lvl}`)} ${paint('magenta', hero ? require('./character').CLASSES[hero.cls].name : L.titleFor(t, lvl))} ${xpBar} ${paint('gray', `${fmt(state.xp)}/${fmt(hi)} ${t.xpLabel}`)}`,
     `${paint('red', t.hpLabel)} ${hpBar}`,
   ];
   if (ses.combo >= 3) parts.push(paint('yellow', `${ascii ? 'x' : '🔥 x'}${ses.combo} combo`));
   const ctx = input.context_window && input.context_window.used_percentage;
   if (ctx != null) parts.push(paint(ctx > 80 ? 'red' : 'blue', `${ascii ? 'MP' : '✦ mana'} ${Math.round(100 - ctx)}%`));
   const cost = input.cost && input.cost.total_cost_usd;
-  if (cost) parts.push(paint('yellow', `${ascii ? '$' : '💰 '}${cost.toFixed(2)}g`));
+  if (cost) parts.push(paint('gray', `$${cost.toFixed(2)} spent`));
   if (input.model && input.model.display_name) parts.push(paint('gray', input.model.display_name));
 
   process.stdout.write(`${row1}\n${parts.join('  ')}`);

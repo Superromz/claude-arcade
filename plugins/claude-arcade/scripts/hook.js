@@ -11,6 +11,7 @@
 
 const L = require('./lib');
 const M = require('./messages');
+const C = require('./character');
 
 function main() {
   const input = L.readStdin();
@@ -19,6 +20,7 @@ function main() {
   const t = L.theme(cfg);
   const th = cfg.theme;
   const sid = input.session_id || 'default';
+  const hero = C.getCharacter(cfg);
   const toasts = [];
 
   L.withLock(() => {
@@ -35,6 +37,19 @@ function main() {
     const gain = (n) => { state.xp += n; ses.xp += n; turn.xp += n; };
     const log = (kind, text, extra = {}) => L.logEvent({ sid, kind, text, ...extra });
 
+    // XP from real token usage, read incrementally from the transcripts.
+    const addTokens = (file, key) => {
+      state.offsets ||= {};
+      state.tokens ||= { input: 0, output: 0 };
+      const u = C.readTokens(file, state.offsets, key);
+      if (!u.input && !u.output) return 0;
+      state.tokens.input += u.input;
+      state.tokens.output += u.output;
+      const earned = C.tokenXp(state.tokens) - (state.tokenXp || 0);
+      state.tokenXp = (state.tokenXp || 0) + earned;
+      gain(earned);
+      return earned;
+    };
     switch (event) {
       case 'SessionStart': {
         const today = new Date().toISOString().slice(0, 10);
@@ -75,7 +90,7 @@ function main() {
         state.tools[mode] = (state.tools[mode] || 0) + 1;
         turn[mode] = (turn[mode] || 0) + 1;
         ses.combo += 1;
-        gain((L.TOOL_XP[mode] || 1) + Math.floor(ses.combo / 10)); // combo bonus
+        gain(C.xpFor(hero, mode, L.TOOL_XP[mode] || 1, ses.combo)); // class + combo bonus
         if (ses.combo > 0 && ses.combo % 10 === 0) log('combo', `🔥 ${ses.combo}-hit combo!`);
         set('thinking');
         break;
@@ -114,6 +129,7 @@ function main() {
         if (id && ses.party[id]) delete ses.party[id];
         else delete ses.party[Object.keys(ses.party)[0]];
         gain(5);
+        if (input.agent_transcript_path) addTokens(input.agent_transcript_path, `agent:${input.agent_id}`);
         if (member) log('return', `${member.icon} The ${member.cls} returns with news. +5 ${t.xpLabel}`);
         break;
       }
@@ -129,12 +145,14 @@ function main() {
         state.quests += 1;
         ses.hp = Math.min(100, ses.hp + 20);
         gain(10);
+        const tokXp = addTokens(input.transcript_path, sid);
+        if (tokXp) turn.tokens = tokXp;
         const secs = Math.round((now - turn.start) / 1000);
         const tools = Object.keys(L.TOOL_XP).reduce((n, k) => n + (turn[k] || 0), 0);
         let msg;
-        if (tools <= 1) msg = M.say(th, 'questQuick', { xp: turn.xp });
+        if (tools <= 1) msg = M.say(th, 'questQuick', { xp: turn.xp }) + (turn.tokens ? ` (${turn.tokens} from tokens)` : '');
         else {
-          const summary = `${M.turnSummary(th, turn)}. +${turn.xp} ${t.xpLabel} in ${fmtTime(secs)}.`;
+          const summary = `${M.turnSummary(th, turn)}. +${turn.xp} ${t.xpLabel}${turn.tokens ? ` (${turn.tokens} from tokens)` : ''} in ${fmtTime(secs)}.`;
           const bonus = turn.fails ? M.say(th, 'scarred', { hits: turn.fails === 1 ? '1 hit' : turn.fails + ' hits' }) : M.say(th, 'flawless');
           msg = `${M.say(th, 'quest', { summary })} ${bonus}`;
         }
@@ -152,6 +170,11 @@ function main() {
       const msg = M.say(th, 'levelUp', { lvl: levelAfter, title: L.titleFor(t, levelAfter) });
       state.pending.push(msg);
       log('level', msg);
+      for (const sp of C.SPELLS.filter((x) => x.lvl > levelBefore && x.lvl <= levelAfter && x.lvl > 1)) {
+        const learn = `📖 New spell learned: ${sp.name}!`;
+        state.pending.push(learn);
+        log('level', learn);
+      }
     }
     for (const a of L.unlock(state, ses)) {
       const msg = M.say(th, 'achievement', { name: a.name, desc: a.desc });

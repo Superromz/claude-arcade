@@ -15,36 +15,32 @@ without emoji.
 
 ## 🕹 The game pane
 
-Run `/claude-arcade:play` to open a full-screen, animated game that follows Claude live in a split
-pane. Windows Terminal splits itself; in Warp press `Ctrl+Shift+D` (`Cmd+D` on macOS) and paste the
-command it copies for you.
+Run `/claude-arcade:play` to open the game in a split pane (in Warp: `Ctrl+Shift+D`, then paste the
+command it copies for you). It's pixel art rendered with half-block characters in 24-bit color.
 
-```
-╭─ CLAUDE ARCADE · Dungeon Crawl ────────[1 Adventure] 2 Party  3 Trophies  4 Stats ─╮
-│ Lv 3 Apprentice Coder  ██████░░░░░░░░ 240/600 XP   HP ▰▰▰▰▰▰▰▰▰▱ 90   combo x12  │
-│ » Forging… auth.ts 4s                                                              │
-├────────────────────────────────────────────────────────────────────────────────────┤
-│ !                 !                 !                 !                 !          │
-│ |                 |                 |                 |                 |          │
-│                    S    R    o_T                                                   │
-│                   /|\  /|\  /|  .---.                                              │
-│                   / \  / \  / \  | |                                               │
-│____________________________________________________________________________________│
-├─ Quest log ────────────────────────────────────────────────────────────────────────┤
-│ 15:18:41 🏹 A Ranger slips out of the shadows to scout: Explore                    │
-│ 15:18:44 💥 Bash backfired! −10 HP                                                 │
-│ 15:18:52 🏆 Loot secured. Forged 3 files, cast 2 spells. +48 XP in 41s.            │
-╰ 1-4 tabs · t theme · s session · space cheer · q quit ─────────────────────────────╯
-```
+**Create your hero.** On first launch (or press `c`) pick a name, class, colors, skin, hair and an
+accessory. Each class has its own look, weapon and XP bonus:
 
-The hero sits by the campfire when idle, thinks in bubbles, paces the dungeon while reading and
-searching, hammers an anvil while editing, throws lightning when running commands, gets hit by a
-goblin when a tool fails, and opens a treasure chest when the turn is done. Subagents walk behind
-the hero as party members. Tabs show your party, trophies with progress bars, and stats.
+| Class | Weapon | Bonus |
+|---|---|---|
+| Mage | staff | +50% XP from commands |
+| Ranger | bow | +50% XP from reading & searching |
+| Knight | sword & shield | +50% XP from edits |
+| Warlock | familiar | +50% XP from agents |
+| Bard | lute | +50% XP from web, MCP & planning |
+| Rogue | daggers | double combo bonus |
 
-Keys: `1`-`4` or `←`/`→` switch tabs · `t` cycles the theme · `s` follows a specific session ·
-`space` cheers · `q` quits.
+**Battle while Claude works.** When a task starts, waves of monsters attack (slimes, bats,
+skeletons, goblins, and a warlord boss every 5th wave). Every tool call Claude makes is a spell
+cast; your agents fight as companions. New spells unlock as you level: Fireball (3), Frost Shard (5),
+Chain Lightning (8), Meteor (12), Starfall (18). Kills drop gold and XP; practice waves give gold only.
 
+**Play along.** `1`-`6` or `space` cast from your hotbar (with cooldowns), click monsters to strike
+them, `w` summons a practice wave when idle, `tab`/`←→` switch views (Adventure, Hero, Party,
+Trophies), `t` theme, `p` pick session, `q` quit.
+
+**Real progress.** XP comes from tool use, finished tasks, monsters slain, and the actual tokens in
+your Claude Code transcripts. Your stats (STR, INT, DEX, WIS, CHA) grow from how you use Claude.
 ## Preview it first
 
 ```sh
@@ -91,7 +87,7 @@ them back.
 - **HP**: failed tool calls cost HP; finishing turns heals.
 - **Party**: each running subagent gets a class (Ranger, Sage, Paladin, Mage…) with an animated
   row and a stamina bar for its context usage.
-- **Mana & gold**: remaining context window and session cost.
+- **Mana & cost**: mana is the context window Claude has left; the session's dollar cost shows as "$1.20 spent".
 - **Achievements**: 13 to unlock, from *First Blood* to *Guild Master*.
 - **Spinner**: themed verbs ("Rolling for initiative", "Brewing potions"…) and tips.
 - **Toasts**: varied, themed messages with an end-of-turn summary ("Forged 3 files, cast 2 spells. +48 XP in 41s. Flawless!"). Only three hooks run in the foreground, so tool calls don't add "running hook" lines.

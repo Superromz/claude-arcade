@@ -42,9 +42,9 @@ class PixelCanvas {
       }
     });
   }
-  label(col, row, str, fg) {
+  label(col, row, str, fg, bold = false) {
     let i = 0;
-    for (const ch of str) this.text.set(`${col + i++},${row}`, [ch, fg]);
+    for (const ch of str) this.text.set(`${col + i++},${row}`, [ch, fg, bold]);
   }
   map(fn) { this.px = this.px.map(fn); }
   lines() {
@@ -55,7 +55,7 @@ class PixelCanvas {
         const top = this.px[(2 * r) * this.w + x], bot = this.px[(2 * r + 1) * this.w + x];
         const t = this.text.get(`${x},${r}`);
         let ch, f, b;
-        if (t) { ch = t[0]; f = fgc(t[1]); b = bgc(mix(top, bot, 0.5)); }
+        if (t) { ch = t[0]; f = (t[2] ? `${ESC}1m` : `${ESC}22m`) + fgc(t[1]); b = bgc(mix(top, bot, 0.5)); }
         else if (top === bot || (top[0] === bot[0] && top[1] === bot[1] && top[2] === bot[2])) { ch = ' '; f = cf; b = bgc(bot); }
         else { ch = '▀'; f = fgc(top); b = bgc(bot); }
         if (f !== cf) { s += f; cf = f; }
