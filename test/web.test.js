@@ -153,7 +153,7 @@ test('snapshot has the panel data', async () => {
   assert.ok(s.skills.tree.length === 3 && s.skills.tree[0].nodes[0].id === 'knight.0.0');
   assert.ok(s.shop.items.every((it) => 'owned' in it && 'equipped' in it && 'price' in it));
   assert.ok(s.bounties.daily.length && s.bounties.daily.every((b) => typeof b.id === 'string'));
-  assert.deepStrictEqual(s.tabs.slice(0, 2), ['Adventure', 'Hero']);
+  assert.deepStrictEqual(s.tabs, require(path.join(__dirname, '..', 'plugins', 'claude-arcade', 'scripts', 'state.js')).TABS);
 });
 
 test('the stream sends a snapshot and battle events', async () => {
