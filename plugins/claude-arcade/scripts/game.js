@@ -215,7 +215,9 @@ function saveProgress() {
     L.withLock(() => {
       const st = L.loadState();
       if (ui.xpPending) { st.xp += ui.xpPending; st.battleXp = (st.battleXp || 0) + ui.xpPending; ui.xpPending = 0; }
-      st.game = { ...(st.game || {}), bosses: Math.max((st.game || {}).bosses || 0, ui.battle.bosses || 0), gold: ui.battle.gold, kills: ui.battle.kills, bestWave: Math.max((st.game || {}).bestWave || 0, ui.battle.wave) };
+      const onDisk = (st.game || {}).bossTypes || {}, mine = ui.battle.bossTypes || {};
+      const bossTypes = Object.fromEntries([...new Set([...Object.keys(onDisk), ...Object.keys(mine)])].map((k) => [k, Math.max(onDisk[k] || 0, mine[k] || 0)]));
+      st.game = { ...(st.game || {}), bossTypes, bosses: Math.max((st.game || {}).bosses || 0, ui.battle.bosses || 0), gold: ui.battle.gold, kills: ui.battle.kills, bestWave: Math.max((st.game || {}).bestWave || 0, ui.battle.wave) };
       L.saveState(st);
     });
   } catch {}
@@ -282,7 +284,7 @@ function approvalKey(key) {
 // Load the active hero's banked gold and kills and reset the battlefield.
 function enterGame() {
   const g = L.loadState().game || {};
-  Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, bosses: g.bosses || 0, lastEventT: Date.now() });
+  Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, bosses: g.bosses || 0, bossTypes: { ...(g.bossTypes || {}) }, lastEventT: Date.now() });
   ui.xpPending = 0;
   ui.screen = 'game';
 }
