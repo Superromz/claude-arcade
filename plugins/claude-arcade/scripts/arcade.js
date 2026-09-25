@@ -179,7 +179,8 @@ function projectTable(s) {
 
 function toggle(key) {
   const cfg = L.loadConfig();
-  if (!['toasts', 'ascii'].includes(key)) { console.log('Toggle one of: toasts, ascii'); process.exit(1); }
+  if (!['toasts', 'ascii', 'approvals'].includes(key)) { console.log('Toggle one of: toasts, ascii, approvals'); process.exit(1); }
+  if (key === 'approvals') { cfg.approveInGame = cfg.approveInGame === false; L.saveConfig(cfg); return console.log(`In-game approvals are now ${cfg.approveInGame ? 'on' : 'off'}.`); }
   cfg[key] = !cfg[key];
   L.saveConfig(cfg);
   console.log(`${key} is now ${cfg[key] ? 'on' : 'off'}.`);

@@ -176,6 +176,35 @@ test('stats are tracked per project (git root) as well as globally', () => {
   assert.match(run('arcade.js', {}, ['stats']), /PROJECTS[\s\S]*my-app[\s\S]*notes/);
 });
 
+test('permission requests can be answered from the game pane', async () => {
+  const { spawn } = require('child_process');
+  const arcade = path.join(home, '.claude', 'arcade');
+  fs.mkdirSync(arcade, { recursive: true });
+  const ask = (heartbeat, answer) => new Promise((resolve) => {
+    if (heartbeat) fs.writeFileSync(path.join(arcade, 'game.alive'), '1'); else fs.rmSync(path.join(arcade, 'game.alive'), { force: true });
+    const child = spawn(process.execPath, [path.join(SCRIPTS, 'hook.js')], { env });
+    let out = '';
+    child.stdout.on('data', (b) => { out += b; });
+    child.on('close', () => resolve(out));
+    child.stdin.end(JSON.stringify({ hook_event_name: 'PermissionRequest', session_id: 's1', tool_name: 'Bash', tool_input: { command: 'npm test' } }));
+    if (!answer) return;
+    const dir = path.join(arcade, 'approvals');
+    const timer = setInterval(() => {
+      fs.writeFileSync(path.join(arcade, 'game.alive'), '1'); // keep the heartbeat fresh
+      const req = fs.existsSync(dir) && fs.readdirSync(dir).find((f) => f.endsWith('.req.json'));
+      if (req) { clearInterval(timer); fs.writeFileSync(path.join(dir, req.replace('.req.json', '.answer.json')), JSON.stringify({ behavior: answer })); }
+    }, 50);
+  });
+  // No game running: no output, Claude shows its normal dialog.
+  assert.strictEqual(await ask(false), '');
+  const allow = JSON.parse(await ask(true, 'allow'));
+  assert.strictEqual(allow.hookSpecificOutput.decision.behavior, 'allow');
+  const deny = JSON.parse(await ask(true, 'deny'));
+  assert.strictEqual(deny.hookSpecificOutput.decision.behavior, 'deny');
+  assert.strictEqual(await ask(true, 'claude'), ''); // hand back to Claude
+  assert.deepStrictEqual(fs.readdirSync(path.join(arcade, 'approvals')), []); // cleaned up
+});
+
 test('setup and uninstall round-trip user settings', () => {
   const settingsFile = path.join(home, '.claude', 'settings.json');
   fs.writeFileSync(settingsFile, JSON.stringify({ model: 'opus', statusLine: { type: 'command', command: 'mine' } }));

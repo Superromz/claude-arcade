@@ -67,6 +67,24 @@ function readEvents(n = 50) {
   } catch { return []; }
 }
 
+// In-game approvals. The PermissionRequest hook drops a request file here and
+// waits for the game pane to write <id>.answer.json. The game writes a
+// heartbeat so the hook only waits when someone can actually answer.
+const APPROVALS_DIR = path.join(HOME, 'approvals');
+const HEARTBEAT = path.join(HOME, 'game.alive');
+function gameAlive() {
+  try { return Date.now() - fs.statSync(HEARTBEAT).mtimeMs < 3000; } catch { return false; }
+}
+function pendingApprovals() {
+  try {
+    return fs.readdirSync(APPROVALS_DIR).filter((f) => f.endsWith('.req.json'))
+      .map((f) => readJSON(path.join(APPROVALS_DIR, f), null)).filter(Boolean).sort((a, b) => a.t - b.t);
+  } catch { return []; }
+}
+function answerApproval(id, behavior) {
+  writeJSON(path.join(APPROVALS_DIR, `${id}.answer.json`), { behavior, t: Date.now() });
+}
+
 function defaultState() {
   return { xp: 0, quests: 0, tools: {}, achievements: [], sessions: {}, streak: { day: null, count: 0 } };
 }
@@ -385,7 +403,7 @@ function unlock(state, ses) {
 }
 
 module.exports = {
-  HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
+  HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, APPROVALS_DIR, HEARTBEAT, gameAlive, pendingApprovals, answerApproval, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
   readJSON, writeJSON, readStdin, loadState, saveState, loadConfig, saveConfig,
   switchHero, createHero, deleteHero, heroList, HERO_FIELDS,
   session, pruneSessions, project, projectRoot, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,

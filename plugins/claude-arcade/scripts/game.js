@@ -67,7 +67,7 @@ function frame(cols, rows) {
 
 function render(force = false) {
   const cols = process.stdout.columns || 100, rows = process.stdout.rows || 30;
-  const lines = frame(cols, rows).slice(0, rows);
+  const lines = approvalDialog(frame(cols, rows).slice(0, rows), cols, rows, UI[L.loadConfig().theme] || UI.rpg);
   let s = '';
   lines.forEach((l, i) => { if (force || ui.prev[i] !== l) s += `${ESC}${i + 1};1H${l}`; });
   ui.prev = lines;
@@ -77,6 +77,7 @@ function render(force = false) {
 function onKey(key) {
   const d = snapshotData();
   if (key === '\x03') return quit();
+  if (approvalKey(key)) return render(true);
   if (ui.screen === 'roster') { rosterAction(rosterKey(key), d); return render(true); }
   if (ui.screen === 'create') { creatorKey(key, d); return render(true); }
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
@@ -138,6 +139,62 @@ function saveProgress() {
   } catch {}
 }
 
+// ---------- in-game approvals ----------
+
+// A permission request from Claude Code shown as a modal encounter over
+// whatever screen is open. The full command is always shown (wrapped).
+function approvalDialog(lines, cols, rows, pal) {
+  const req = L.pendingApprovals()[0];
+  ui.approval = req || null;
+  if (!req) return lines;
+  const W = Math.min(cols - 4, 96), left = Math.floor((cols - W) / 2);
+  const input = req.input || {};
+  const main = input.command || input.file_path || input.url || input.pattern || input.query || JSON.stringify(input);
+  const wrap = (text, w) => { const out = []; for (const para of String(text).split('\n')) { let s = para; do { out.push(s.slice(0, w)); s = s.slice(w); } while (s.length); } return out; };
+  const body = wrap(main, W - 6).slice(0, Math.max(3, rows - 14));
+  const more = wrap(main, W - 6).length - body.length;
+  const blink = (ui.tick >> 3) % 2;
+  const edge = blink ? pal.accent : pal.bad;
+  const box = [
+    `${fg(edge)}╭${'─'.repeat(W - 2)}╮`,
+    ['  ⚔ A COMMAND BLOCKS YOUR PATH!', pal.accent, true],
+    [`  ${req.tool}${input.description ? ' · ' + input.description : ''}`, pal.text, true],
+    [`  ${require('path').basename(req.cwd || '') || ''}`, pal.dim],
+    ['', pal.text],
+    ...body.map((l) => [`   ${l}`, pal.gold]),
+    ...(more > 0 ? [[`   … ${more} more line${more > 1 ? 's' : ''} — press C to review in Claude`, pal.dim]] : []),
+    ['', pal.text],
+    ['KEYS'],
+    `${fg(edge)}╰${'─'.repeat(W - 2)}╯`,
+  ];
+  const top = Math.max(1, Math.floor((rows - box.length) / 2));
+  const out = lines.slice();
+  box.forEach((b, i) => {
+    let content;
+    if (typeof b === 'string') content = `${bg(pal.panel2)}${b}${RESET}`;
+    else if (b[0] === 'KEYS') {
+      const key = (k, label, c) => `${bg(c)}${fg(pal.ink)}${BOLD} ${k} ${NOBOLD}${bg(pal.panel2)}${fg(pal.text)} ${label}   `;
+      const keys = `  ${key('Y', 'Allow once', pal.good)}${key('N', 'Deny', pal.bad)}${key('C', 'Answer in Claude', pal.dim)}`;
+      content = `${bg(pal.panel2)}${fg(edge)}│${keys}${' '.repeat(Math.max(0, W - 2 - L.visWidth('  ' + ' Y  Allow once    N  Deny    C  Answer in Claude   ')))}${fg(edge)}│${RESET}`;
+    } else content = `${bg(pal.panel2)}${fg(edge)}│${panelLine(W - 2, pal.panel2, [[b[0], b[1], b[2]]]).replace(RESET, '')}${bg(pal.panel2)}${fg(edge)}│${RESET}`;
+    const row = top + i;
+    if (row < out.length) out[row] = `${bg(pal.panel)}${' '.repeat(left)}${content}${bg(pal.panel)}${' '.repeat(Math.max(0, cols - left - W))}${RESET}`;
+  });
+  return out;
+}
+
+function approvalKey(key) {
+  const req = ui.approval;
+  if (!req) return false;
+  const k = key.toLowerCase();
+  if (k === 'y') { L.answerApproval(req.id, 'allow'); floater(ui.heroX, ui.heroY - 6, 'ALLOWED!', [120, 230, 120], true); }
+  else if (k === 'n') { L.answerApproval(req.id, 'deny'); floater(ui.heroX, ui.heroY - 6, 'DENIED', [255, 90, 90], true); }
+  else if (k === 'c') L.answerApproval(req.id, 'claude');
+  else return true; // swallow other keys while the dialog is open
+  ui.approval = null;
+  return true;
+}
+
 // ---------- hero roster ----------
 
 // Load the active hero's banked gold and kills and reset the battlefield.
@@ -173,6 +230,7 @@ function rosterAction(a, d) {
 
 function quit() {
   saveProgress();
+  try { require('fs').unlinkSync(L.HEARTBEAT); } catch {}
   process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
   process.exit(0);
 }
@@ -202,6 +260,8 @@ if (process.argv.includes('--snapshot')) {
   process.on('SIGINT', quit);
   process.on('exit', () => { saveProgress(); process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`); });
   setInterval(saveProgress, 3000);
+  const beat = () => { try { require('fs').writeFileSync(L.HEARTBEAT, String(Date.now())); } catch {} };
+  beat(); setInterval(beat, 1000);
   if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
   setInterval(() => { ui.tick++; try { render(); } catch {} }, 100);
   render(true);

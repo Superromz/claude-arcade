@@ -13,10 +13,36 @@ const L = require('./lib');
 const M = require('./messages');
 const C = require('./character');
 
+// Show the request in the game pane and wait for Y/N there. With no game
+// running, approvals turned off, or no answer in time, print nothing so
+// Claude Code shows its normal permission dialog.
+function approvalInGame(input, cfg) {
+  if (cfg.approveInGame === false || !L.gameAlive()) return;
+  const fs = require('fs'), path = require('path');
+  const id = `${Date.now().toString(36)}-${process.pid}`;
+  const req = path.join(L.APPROVALS_DIR, `${id}.req.json`);
+  const ans = path.join(L.APPROVALS_DIR, `${id}.answer.json`);
+  L.writeJSON(req, { id, sid: input.session_id, t: Date.now(), tool: input.tool_name, input: input.tool_input || {}, cwd: input.cwd || '' });
+  const deadline = Date.now() + 90 * 1000;
+  const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  let answer = null;
+  while (Date.now() < deadline && !answer) {
+    answer = L.readJSON(ans, null);
+    if (!answer) { if (!L.gameAlive()) break; sleep(150); }
+  }
+  for (const f of [req, ans]) try { fs.unlinkSync(f); } catch {}
+  if (!answer || !['allow', 'deny'].includes(answer.behavior)) return;
+  L.logEvent({ sid: input.session_id, kind: answer.behavior === 'allow' ? 'combo' : 'hurt', text: `${answer.behavior === 'allow' ? '⚔ Allowed' : '✖ Denied'} in game: ${input.tool_name}` });
+  const decision = { behavior: answer.behavior };
+  if (answer.behavior === 'deny') decision.message = 'The user denied this from the Claude Arcade game pane.';
+  process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: 'PermissionRequest', decision } }));
+}
+
 function main() {
   const input = L.readStdin();
   const event = input.hook_event_name || process.argv[2] || '';
   const cfg = L.loadConfig();
+  if (event === 'PermissionRequest') return approvalInGame(input, cfg);
   const t = L.theme(cfg);
   const th = cfg.theme;
   const sid = input.session_id || 'default';
