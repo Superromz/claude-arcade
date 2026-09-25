@@ -7,10 +7,11 @@ const X = require('./pixel');
 const C = require('./character');
 const SP = require('./sprites');
 const { ESC, RESET, BOLD, NOBOLD, fg, bg, UI, TABS, SIDE, ui, snapshotData, currentMode, isBusy } = require('./state');
-const { emit, floater, spawnWave, hitMonster, aliveMonsters, COOLDOWN, playerCast, cast, stepBattle, drawShots } = require('./battle');
+const { emit, floater, spawnWave, hitMonster, aliveMonsters, COOLDOWN, playerCast, cast, stepBattle, drawShots, drawBattleOverlay } = require('./battle');
 const { drawBackground } = require('./backgrounds');
 
 function drawScene(pc, d, pal) {
+  ui.frameData = d;
   const t = ui.tick, th = d.cfg.theme, W = pc.w, H = pc.h;
   const floorY = H - Math.max(5, Math.floor(H * 0.18));
   const mode = currentMode(d.ses);
@@ -73,6 +74,7 @@ function drawScene(pc, d, pal) {
     pc.label(Math.max(0, Math.min(W - tag.length - 1, Math.round(front.x + fw / 2 - tag.length / 2))), Math.max(1, Math.floor((front.y - (front.boss ? 11 : 8)) / 2)), tag, [255, 236, 200], true);
   }
   drawShots(pc);
+  drawBattleOverlay(pc, pal, d);
 
   ui.particles = ui.particles.filter((p) => (p.life -= 1) > 0);
   for (const p of ui.particles) {

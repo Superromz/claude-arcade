@@ -78,6 +78,8 @@ function cast(d, mode, origin, pal, forced, boost = 1) {
   const spell = forced || C.spellFor(d.lvl, mode, ui.tick + ui.battle.kills);
   const stat = d.stats[C.CLASSES[d.hero.cls].stat] || 10;
   const dmg = Math.round(C.damage(spell, d.lvl, stat) * boost);
+  // Tell the hero animation what was just cast.
+  ui.heroAction = { kind: spell.id === 'basic' ? 'swing' : 'cast', spell: spell.id, t: ui.tick };
   const target = targets[0];
   const [ox, oy] = origin;
   if (spell.id === 'chain') {
@@ -210,4 +212,7 @@ function drawShots(pc) {
   ui.battle.bolts = ui.battle.bolts.filter((bo) => bo.life > 0);
 }
 
-module.exports = { emit, floater, spawnWave, hitMonster, aliveMonsters, COOLDOWN, playerCast, cast, stepBattle, drawShots };
+// Extra battle HUD drawn over the scene (boss bars, banners). Pixel coords.
+function drawBattleOverlay(pc, pal, d) {}
+
+module.exports = { drawBattleOverlay, emit, floater, spawnWave, hitMonster, aliveMonsters, COOLDOWN, playerCast, cast, stepBattle, drawShots };

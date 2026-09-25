@@ -60,4 +60,12 @@ function currentMode(ses) {
 
 const isBusy = (mode) => !['idle', 'victory', 'waiting', 'cheer'].includes(mode);
 
-module.exports = { ESC, RESET, BOLD, NOBOLD, fg, bg, UI, TABS, SIDE, ui, snapshotData, currentMode, isBusy };
+// Biome by hero level (backgrounds and monster rosters both use this).
+// ARCADE_BIOME forces one for screenshots.
+const BIOMES = ['dungeon', 'forest', 'lava', 'castle'];
+function biomeFor(lvl) {
+  if (process.env.ARCADE_BIOME && BIOMES.includes(process.env.ARCADE_BIOME)) return process.env.ARCADE_BIOME;
+  return lvl >= 15 ? 'castle' : lvl >= 10 ? 'lava' : lvl >= 5 ? 'forest' : 'dungeon';
+}
+
+module.exports = { BIOMES, biomeFor, ESC, RESET, BOLD, NOBOLD, fg, bg, UI, TABS, SIDE, ui, snapshotData, currentMode, isBusy };
