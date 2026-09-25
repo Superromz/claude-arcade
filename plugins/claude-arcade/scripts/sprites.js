@@ -838,4 +838,6 @@ function drawCompanion(pc, who, x, y, opts = {}) {
 
 const MON = require('./monsters');
 
-module.exports = { MONSTERS: MON.MONSTERS, drawMonster: MON.drawMonster, monsterSize: MON.monsterSize, build, drawHero, drawCompanion, palette, POSES, HEADS, companionClass };
+module.exports = { MONSTERS: MON.MONSTERS, drawMonster: MON.drawMonster, monsterSize: MON.monsterSize, build, drawHero, drawCompanion, palette, POSES, HEADS, companionClass,
+  // Raw sprite data for the web view (/api/assets).
+  BODY, FACES, SIT_LEGS, ACCESSORY, CAPE, COMP_BODY, COMP_WALK, COMP_SIT, COMP_HEADS };
