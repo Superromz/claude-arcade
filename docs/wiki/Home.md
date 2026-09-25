@@ -27,6 +27,8 @@ runs in the CLI, next to Claude, so it's something to play (or just watch) while
 | [Combat and Spells](Combat-and-Spells) | Waves, bosses, spells, crits, the hotbar and gold |
 | [Companions](Companions) | How Claude's agents join your party and fight |
 | [HD Graphics](HD-Graphics) | Sharper, glowing image graphics in Warp, kitty, WezTerm and Ghostty |
+| [Campaign](Campaign) | The Great Refactor: chapters, story, seasons and the codex |
+| [Kingdoms](Kingdoms) | Your projects as kingdoms to liberate on the world map |
 | [Skill Tree](Skill-Tree) | Class skill kits, three branches with capstones, respec and paragon |
 | [Bounties](Bounties) | Daily, weekly and monthly challenges that pay gold for real Claude work |
 | [Guild](Guild) | Recruit finished agents as permanent, leveling companions |

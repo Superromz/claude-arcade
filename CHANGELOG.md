@@ -7,6 +7,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Added
+- **Campaign tab:** "The Great Refactor", a story in 8 chapters plus monthly seasons; a world map where your projects are kingdoms to liberate; a codex of lore. Rewards are titles, cosmetics and gold, never XP.
+
+### Added
 - Monthly bounties, 70+ new daily and weekly bounties, and 110 new trophies (168 in all) for chests, crafting, every boss and biome, the skill tree, the guild, every class, plus secret ones.
 
 ### Changed

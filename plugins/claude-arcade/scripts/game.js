@@ -28,9 +28,10 @@ const { projectsTab } = require('./projects');
 const { guildTab, guildKey } = require('./guild');
 const { bountiesTab, bountiesKey } = require('./bounties');
 const { skillsTab, skillsKey } = require('./skills');
+const { campaignTab, campaignKey } = require('./campaign');
 const { lootTick, lootOverlay, lootKey } = require('./loot');
 // Tab bodies by name, so TABS order can change freely.
-const TAB_FN = { Hero: heroTab, Skills: skillsTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
+const TAB_FN = { Campaign: campaignTab, Hero: heroTab, Skills: skillsTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
 const { applyOverlay } = require('./celebrate');
 const { sectionHeader } = require('./panels');
 const HD = require('./hd');
@@ -75,6 +76,8 @@ function frame(cols, rows) {
   ui.hotbarRow = out.length;
   const keys = TABS[ui.tab] === 'Shop'
     ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    : TABS[ui.tab] === 'Campaign'
+    ? [['m', 'map'], ['j', 'chapter'], ['k', 'codex'], ['↑↓', 'select'], ['r', 'story'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Skills'
     ? [['↑↓←→', 'move'], ['enter', 'learn'], ['r', 'respec'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Bounties'
@@ -160,6 +163,7 @@ function onKey(key) {
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (TABS[ui.tab] === 'Skills' && key !== '\t' && skillsKey(key, d)) return render(true);
+  if (TABS[ui.tab] === 'Campaign' && key !== '\t' && campaignKey(key, d)) return render(true);
   if (key === 'q' || key === '\x1b') return askQuit();
   if (key === 'g') return toggleHD();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
@@ -217,6 +221,10 @@ function saveProgress() {
       if (ui.xpPending) { st.xp += ui.xpPending; st.battleXp = (st.battleXp || 0) + ui.xpPending; ui.xpPending = 0; }
       const onDisk = (st.game || {}).bossTypes || {}, mine = ui.battle.bossTypes || {};
       const bossTypes = Object.fromEntries([...new Set([...Object.keys(onDisk), ...Object.keys(mine)])].map((k) => [k, Math.max(onDisk[k] || 0, mine[k] || 0)]));
+      const sesP = ((st.sessions || {})[ui.pin || (ui.frameData && ui.frameData.sid)] || {}).project;
+      const bossDelta = (ui.battle.bosses || 0) - (ui.bossesSaved || 0);
+      if (sesP && bossDelta > 0) { const k = process.platform === 'win32' ? sesP.toLowerCase() : sesP; if (st.projects && st.projects[k]) st.projects[k].bosses = (st.projects[k].bosses || 0) + bossDelta; }
+      ui.bossesSaved = ui.battle.bosses || 0;
       st.game = { ...(st.game || {}), bossTypes, bosses: Math.max((st.game || {}).bosses || 0, ui.battle.bosses || 0), gold: ui.battle.gold, kills: ui.battle.kills, bestWave: Math.max((st.game || {}).bestWave || 0, ui.battle.wave) };
       L.saveState(st);
     });

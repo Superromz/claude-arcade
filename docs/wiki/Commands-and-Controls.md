@@ -46,14 +46,15 @@ it.
 | # | Tab | Shows |
 |---|---|---|
 | 1 | Adventure | The battlefield (or the camp), plus your hero card, companions and quest log on wide terminals |
-| 2 | Hero | Portrait, stats, XP, tokens, gold, kills, spellbook and your "Deeds" |
-| 3 | [Skills](Skill-Tree) | Your class skill tree, respec and paragon |
-| 4 | Party | Your companions and recent adventures |
-| 5 | [Guild](Guild) | Recruit finished agents as permanent companions |
-| 6 | [Bounties](Bounties) | Daily and weekly challenges; Enter claims a finished one |
-| 7 | Trophies | Achievements with progress bars |
-| 8 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
-| 9 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
+| 2 | [Campaign](Campaign) | World map of your project kingdoms, the story chapters, seasons and the codex (`m` map, `j` chapter, `k` codex, `r` story, Enter claim) |
+| 3 | Hero | Portrait, stats, XP, tokens, gold, kills, spellbook and your "Deeds" |
+| 4 | [Skills](Skill-Tree) | Your class skill tree, respec and paragon |
+| 5 | Party | Your companions and recent adventures |
+| 6 | [Guild](Guild) | Recruit finished agents as permanent companions |
+| 7 | [Bounties](Bounties) | Daily and weekly challenges; Enter claims a finished one |
+| 8 | Trophies | Achievements with progress bars |
+| 9 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
+| 10 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
 
 Switch tabs with `tab`, `←` `→`, or a click on the tab name. The number keys are the hotbar, not tab
 shortcuts.

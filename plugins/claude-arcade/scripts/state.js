@@ -23,7 +23,7 @@ const UI = {
   retro: { panel: [6, 18, 6], panel2: [12, 34, 12], accent: [90, 255, 90], text: [140, 255, 140], dim: [50, 140, 50], good: [90, 255, 90], bad: [200, 255, 120], magic: [120, 255, 160], gold: [200, 255, 100], ink: [6, 18, 6] },
 };
 
-const TABS = ['Adventure', 'Hero', 'Skills', 'Party', 'Guild', 'Bounties', 'Trophies', 'Shop', 'Projects'];
+const TABS = ['Adventure', 'Campaign', 'Hero', 'Skills', 'Party', 'Guild', 'Bounties', 'Trophies', 'Shop', 'Projects'];
 
 const SIDE = 46;
 
