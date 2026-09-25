@@ -95,7 +95,8 @@ function render(force = false) {
   const hd = HD.state.on && presenter;
   if (hd) HD.state.render = presenter.ready();
   ui.hdFrame = null; ui.hdBlank = null;
-  const lines = approvalDialog(frame(cols, rows).slice(0, rows), cols, rows, UI[L.loadConfig().theme] || UI.rpg);
+  const pal = UI[L.loadConfig().theme] || UI.rpg;
+  const lines = quitDialog(approvalDialog(frame(cols, rows).slice(0, rows), cols, rows, pal), cols, rows, pal);
   let s = '';
   lines.forEach((l, i) => { if (force || ui.prev[i] !== l) s += `${ESC}${i + 1};1H${l}`; });
   ui.prev = lines;
@@ -147,6 +148,11 @@ function toggleHD() {
 function onKey(key) {
   const d = snapshotData();
   if (key === '\x03') return quit();
+  if (ui.confirmQuit) {
+    if (key.toLowerCase() === 'y' || key === '\r' || key === '\n') return quit();
+    ui.confirmQuit = false;
+    return render(true);
+  }
   if (approvalKey(key)) return render(true);
   if (ui.screen === 'game' && lootKey(key)) return render(true);
   if (ui.screen === 'roster') { rosterAction(rosterKey(key), d); return render(true); }
@@ -154,7 +160,7 @@ function onKey(key) {
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (TABS[ui.tab] === 'Skills' && key !== '\t' && skillsKey(key, d)) return render(true);
-  if (key === 'q' || key === '\x1b') return quit();
+  if (key === 'q' || key === '\x1b') return askQuit();
   if (key === 'g') return toggleHD();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Guild' && key !== '\t' && key !== 'q' && guildKey(key, d)) return render(true);
@@ -293,7 +299,7 @@ function newHero() {
 
 function rosterAction(a, d) {
   if (!a) return;
-  if (a.quit) return quit();
+  if (a.quit) return askQuit();
   if (a.play) return enterGame();
   if (a.create) return newHero();
   if (a.edit) {
@@ -302,6 +308,39 @@ function rosterAction(a, d) {
     ui.create.onDone = (look) => { const cfg = L.loadConfig(); cfg.character = { ...cfg.character, ...look }; L.saveConfig(cfg); openRoster(); };
     ui.create.onCancel = () => openRoster();
   }
+}
+
+function askQuit() {
+  ui.confirmQuit = true;
+  render(true);
+}
+
+// "Leave the game?" box over the current screen. Y or Enter quits; any other key stays.
+function quitDialog(lines, cols, rows, pal) {
+  if (!ui.confirmQuit) return lines;
+  const busy = ui.screen === 'game' && ui.frameData && isBusy(currentMode(ui.frameData.ses));
+  const W = Math.min(cols - 2, 46), left = Math.max(0, Math.floor((cols - W) / 2));
+  const body = [
+    ['Leave the game?', pal.accent, true],
+    [busy ? 'Your hero is mid-battle. Progress is saved,' : 'Your progress is saved. Claude keeps', pal.text],
+    [busy ? 'and Claude keeps working without you.' : 'earning XP while the game is closed.', pal.text],
+  ];
+  const key = (k, label, c) => `${bg(c)}${fg(pal.ink)}${BOLD} ${k} ${NOBOLD}${bg(pal.panel2)}${fg(pal.text)} ${label}  `;
+  const keysPlain = ' Y  Quit    N  Stay  ';
+  const box = [
+    `${bg(pal.panel2)}${fg(pal.accent)}╭${'─'.repeat(W - 2)}╮${RESET}`,
+    ...body.map(([t, c, b]) => `${bg(pal.panel2)}${fg(pal.accent)}│${panelLine(W - 2, pal.panel2, [['  ' + t, c, b]]).replace(RESET, '')}${bg(pal.panel2)}${fg(pal.accent)}│${RESET}`),
+    `${bg(pal.panel2)}${fg(pal.accent)}│${' '.repeat(W - 2)}│${RESET}`,
+    `${bg(pal.panel2)}${fg(pal.accent)}│  ${key('Y', 'Quit', pal.bad)}${key('N', 'Stay', pal.good)}${' '.repeat(Math.max(0, W - 24))}${fg(pal.accent)}│${RESET}`,
+    `${bg(pal.panel2)}${fg(pal.accent)}╰${'─'.repeat(W - 2)}╯${RESET}`,
+  ];
+  const top = Math.max(0, Math.floor((rows - box.length) / 2));
+  const out = lines.slice();
+  box.forEach((b, i) => {
+    const r = top + i;
+    if (r < out.length) out[r] = `${bg(pal.panel)}${' '.repeat(left)}${b}${bg(pal.panel)}${' '.repeat(Math.max(0, cols - left - W))}${RESET}`;
+  });
+  return out;
 }
 
 function quit() {
@@ -357,7 +396,9 @@ if (process.argv.includes('--hd-test')) {
   ui.battle.gold = g.gold || 0; ui.battle.kills = g.kills || 0;
   const warm = Number(process.env.ARCADE_WARMUP) || 40;
   for (ui.tick = 0; ui.tick < warm; ui.tick++) frame(cols, rows);
-  process.stdout.write(frame(cols, rows).join('\n') + '\n');
+  if (process.env.ARCADE_CONFIRM_QUIT) ui.confirmQuit = true;
+  const pal0 = UI[L.loadConfig().theme] || UI.rpg;
+  process.stdout.write(quitDialog(frame(cols, rows), cols, rows, pal0).join('\n') + '\n');
 } else if (!process.stdout.isTTY || !process.stdin.isTTY) {
   console.log('The game needs an interactive terminal. Run it in its own terminal pane: node game.js');
 } else {
