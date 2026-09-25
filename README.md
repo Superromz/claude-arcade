@@ -32,6 +32,15 @@ hero fight.
 |---|---|
 | ![Three saved heroes on the roster screen](docs/images/roster.png) | ![Forest, lava cave, castle and space backgrounds](docs/images/biomes.png) |
 
+## 🌐 Play in your browser
+
+```
+arcade web
+```
+
+Opens the same live game in your browser with full graphics (GPU lighting, bloom, 60 fps). It runs
+only on your computer. See [Web View](https://github.com/Superromz/claude-arcade/blob/main/docs/wiki/Web-View.md).
+
 ## Features at a glance
 
 - **Your hero.** Six classes (Mage, Ranger, Knight, Warlock, Bard, Rogue), each with a main stat,

@@ -12,7 +12,7 @@ const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
 
-const SERVER = path.join(__dirname, '..', 'web', 'server.js');
+const SERVER = path.join(__dirname, '..', 'plugins', 'claude-arcade', 'web', 'server.js');
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'arcade-web-'));
 const ARCADE = path.join(home, '.claude', 'arcade');
 // APPDATA too, like simulate.test.js; the browser and clipboard stay untouched.

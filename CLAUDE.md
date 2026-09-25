@@ -23,7 +23,9 @@ Docs describe what players see and do. Keep implementation detail in `docs/wiki/
 
 ## Code
 
-- Zero runtime dependencies. Node 18+. Game code lives in `plugins/claude-arcade/scripts/`.
+- Zero runtime dependencies. Node 18+. Game code lives in `plugins/claude-arcade/scripts/`; the
+  browser view in `plugins/claude-arcade/web/` (contract: `web/PROTOCOL.md`). After changing sprite
+  modules, run `node plugins/claude-arcade/web/client/sync.js` to rebuild the browser bundle.
 - Hooks must never block or break a Claude session: swallow errors, stay fast, and only print
   output where the hook contract allows it.
 - XP must only come from real Claude usage (tools, tasks, tokens, kills during real tasks).

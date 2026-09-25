@@ -6,6 +6,11 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+## [0.7.0] - 2026-09-25
+
+### Added
+- **Web view:** `arcade web` (or `/claude-arcade:web`) opens the game in your browser with GPU graphics: painted parallax biomes, dynamic lighting and bloom, smooth 60 fps animation, and every tab as a full interface. It runs only on your computer, behind a private link. While it's open, the terminal pane shows a notice instead of running a second battle.
+
 ### Added
 - Every class learns new skills all the way to a Lv 75 ultimate and picks its own six-slot hotbar. The skill tree grows to 8 tiers with Awakened capstones.
 - Progressive difficulty: Normal, Veteran, Heroic, Mythic, then an endless Abyss, with monster affixes (armored, shielded, swift, regenerating, vampiric, splitting, enraging, resistances), a battle HP bar and harmless knockouts. Better loot at higher tiers; XP stays exactly the same.

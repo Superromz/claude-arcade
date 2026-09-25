@@ -15,6 +15,7 @@
 - [Kingdoms](Kingdoms)
 - [Skill Tree](Skill-Tree)
 - [Bounties](Bounties)
+- [Web View](Web-View)
 - [HD Graphics](HD-Graphics)
 - [Progression and XP](Progression-and-XP)
 - [Biomes and Themes](Biomes-and-Themes)

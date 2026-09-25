@@ -1,10 +1,10 @@
 {
   "name": "claude-arcade",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "A Claude Code plugin that turns the terminal UI into a game.",
   "scripts": {
-    "test": "node --test",
+    "test": "node plugins/claude-arcade/web/client/sync.js --check && node --test",
     "demo": "node demo.js"
   },
   "engines": { "node": ">=18" },

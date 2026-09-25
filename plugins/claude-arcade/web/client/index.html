@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" data-theme="rpg">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Arcade</title>
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23ffb03c' d='M8 1l2 5h5l-4 3 2 6-5-4-5 4 2-6-4-3h5z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/client/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the game</a>
+<header class="topbar" id="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span><span class="brand-name">Claude Arcade</span></div>
+  <div class="hero-chip">
+    <canvas id="portrait" width="96" height="96" aria-hidden="true"></canvas>
+    <div class="hero-meta">
+      <div class="hero-line"><span class="hero-name" id="heroName">…</span><span class="lvl-badge" id="heroLvl">Lv 1</span></div>
+      <div class="hero-sub" id="heroSub"></div>
+    </div>
+  </div>
+  <div class="bars">
+    <div class="bar xp" role="progressbar" aria-label="Experience" id="xpBar" aria-valuemin="0" aria-valuemax="100"><div class="fill"></div><span class="bar-text" id="xpText"></span></div>
+    <div class="bar hp" role="progressbar" aria-label="Health" id="hpBar" aria-valuemin="0" aria-valuemax="100"><div class="fill"></div><span class="bar-text" id="hpText"></span></div>
+  </div>
+  <div class="counters">
+    <div class="counter" title="Quests completed"><span class="ic" aria-hidden="true">★</span><b id="cQuests">0</b><span class="lbl">quests</span></div>
+    <div class="counter gold" title="Gold" id="goldCounter"><span class="ic" aria-hidden="true">◉</span><b id="cGold">0</b><span class="lbl">gold</span></div>
+    <div class="counter" title="Daily streak"><span class="ic" aria-hidden="true">✹</span><b id="cStreak">0</b><span class="lbl">day streak</span></div>
+  </div>
+  <div class="theme-switch" role="group" aria-label="Theme">
+    <button data-theme-btn="rpg" title="Dungeon Crawl">RPG</button>
+    <button data-theme-btn="space" title="Star Command">Space</button>
+    <button data-theme-btn="retro" title="8-Bit Arcade">Retro</button>
+  </div>
+</header>
+<nav class="tabs" id="tabs" role="tablist" aria-label="Views"></nav>
+<main id="main">
+  <section class="view adventure" id="view-Adventure" role="tabpanel">
+    <div class="stage-col">
+      <div class="stage" id="stage">
+        <canvas id="scene" aria-label="Battle scene. Click a monster to strike it."></canvas>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+        <div class="hud-wave" id="hudWave"></div>
+        <div class="hud-boss" id="hudBoss" hidden>
+          <div class="boss-name" id="bossName"></div>
+          <div class="boss-bar"><div class="lag"></div><div class="fill"></div><i style="left:70%"></i><i style="left:40%"></i><span id="bossHp"></span></div>
+        </div>
+        <div class="letterbox" id="letterbox" aria-hidden="true"><div></div><div></div></div>
+        <div class="banner" id="banner" aria-live="polite"></div>
+        <div class="loot-quest" id="lootQuest" hidden></div>
+        <div class="loot-wave" id="lootWave" hidden></div>
+        <div class="stage-msg" id="stageMsg">Connecting to your adventure…</div>
+      </div>
+      <div class="hotbar" id="hotbar" role="toolbar" aria-label="Spells"></div>
+      <div class="hotbar-more" id="hotbarMore"></div>
+    </div>
+    <aside class="side">
+      <div class="card party-card"><h3>Companions</h3><div id="partyList" class="party-list"></div></div>
+      <div class="card log-card"><h3>Quest log</h3><ol id="questLog" class="quest-log" aria-live="polite"></ol></div>
+    </aside>
+  </section>
+  <section class="view" id="view-Other" role="tabpanel" hidden></section>
+</main>
+<div class="modal" id="approval" hidden role="dialog" aria-modal="true" aria-labelledby="apTitle">
+  <div class="modal-box encounter">
+    <div class="ap-title" id="apTitle">⚔ A command blocks your path!</div>
+    <div class="ap-tool" id="apTool"></div>
+    <div class="ap-cwd" id="apCwd"></div>
+    <pre class="ap-cmd" id="apCmd"></pre>
+    <div class="ap-actions">
+      <button class="btn good" data-ap="allow"><kbd>Y</kbd> Allow once</button>
+      <button class="btn bad" data-ap="deny"><kbd>N</kbd> Deny</button>
+      <button class="btn" data-ap="claude"><kbd>C</kbd> Answer in Claude</button>
+    </div>
+    <div class="ap-more" id="apMore"></div>
+  </div>
+</div>
+<div class="modal" id="dialog" hidden role="dialog" aria-modal="true"><div class="modal-box" id="dialogBox"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<footer class="keys" id="keys"><kbd>1</kbd>-<kbd>9</kbd> cast · <kbd>Space</kbd> attack · click to strike · <kbd>W</kbd> practice wave · <kbd>[</kbd> <kbd>]</kbd> views · <kbd>T</kbd> theme</footer>
+<script type="module" src="/client/js/main.js"></script>
+</body>
+</html>

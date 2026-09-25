@@ -1,6 +1,6 @@
 {
   "name": "claude-arcade",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Turn Claude Code into a game: create a hero that levels up from your real Claude usage. Monsters attack while Claude works, agents fight as companions, and every prompt is a quest.",
   "author": {
     "name": "Superromz"

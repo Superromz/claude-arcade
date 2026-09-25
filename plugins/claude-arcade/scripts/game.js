@@ -42,7 +42,7 @@ function frame(cols, rows) {
   const d = snapshotData();
   if (ui.screen === 'roster') return rosterFrame(cols, rows);
   if (ui.screen === 'create') return creatorFrame(cols, rows, d);
-  lootTick(d); // before the scene steps the battle, so wave/quest ends are seen first
+  if (!ui.web) lootTick(d); // before the scene steps the battle, so wave/quest ends are seen first
   const pal = UI[d.cfg.theme] || UI.rpg;
   const W = Math.max(50, cols);
   const out = header(d, pal, W);
@@ -52,7 +52,7 @@ function frame(cols, rows) {
   if (ui.tab === 0) {
     if (W >= 130) {
       const sceneW = W - SIDE;
-      const scene = sceneLines(sceneW, bodyH, d, pal);
+      const scene = ui.web ? webNotice(sceneW, bodyH, pal) : sceneLines(sceneW, bodyH, d, pal);
       ui.layout = { top, cols: sceneW, rows: bodyH };
       const side = [...heroCard(d, pal, SIDE), ...partyList(d, pal, SIDE)];
       side.push(sectionHeader(SIDE, pal, 'QUEST LOG'));
@@ -60,7 +60,7 @@ function frame(cols, rows) {
       for (let i = 0; i < bodyH; i++) out.push(scene[i] + (side[i] || panelLine(SIDE, pal.panel, [])));
     } else {
       const sceneH = Math.max(8, Math.min(40, Math.floor(bodyH * 0.62)));
-      out.push(...sceneLines(W, sceneH, d, pal));
+      out.push(...(ui.web ? webNotice(W, sceneH, pal) : sceneLines(W, sceneH, d, pal)));
       ui.layout = { top, cols: W, rows: sceneH };
       out.push(sectionHeader(W, pal, 'QUEST LOG', [[`wave ${ui.battle.wave} · ${ui.battle.kills} slain`, pal.dim]]));
       out.push(...questLog(d, pal, W, bodyH - sceneH - 1));
@@ -169,6 +169,7 @@ function onKey(key) {
   if (TABS[ui.tab] === 'Campaign' && key !== '\t' && campaignKey(key, d)) return render(true);
   if (key === 'q' || key === '\x1b') return askQuit();
   if (key === 'g') return toggleHD();
+  if (ui.web && ['Shop', 'Skills', 'Bounties', 'Guild', 'Campaign'].includes(TABS[ui.tab]) && !['\t', 'q', '\x1b', '\x1b[C', '\x1b[D'].includes(key)) { ui.webHint = ui.tick + 30; return render(true); }
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Guild' && key !== '\t' && key !== 'q' && guildKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Bounties' && key !== '\t' && key !== 'q' && bountiesKey(key, d)) return render(true);
@@ -216,6 +217,7 @@ function onMouse(seq, d) {
 
 // Bank gold and kills in state.json (under the same lock the hooks use).
 function saveProgress() {
+  if (ui.web) { ui.dirty = false; return; } // the browser owns the battle and banks gold/kills
   if (!ui.dirty) return;
   ui.dirty = false;
   try {
@@ -324,6 +326,36 @@ function rosterAction(a, d) {
   }
 }
 
+// ---------- web view hand-off ----------
+
+// The browser view (arcade web) runs the battle and saves gold while it's open.
+// This pane then shows a notice instead of a second battle, so the two never
+// double-run the fight or overwrite each other's gold.
+function webOwner() {
+  const l = L.readJSON(require('path').join(L.HOME, 'web.lock'), null);
+  if (!l || !l.pid) return null;
+  try { process.kill(l.pid, 0); return l; } catch (e) { return e.code === 'EPERM' ? l : null; }
+}
+
+function webNotice(W, H, pal) {
+  const lines = [];
+  const msg = [
+    ['⚔ The battle is running in your browser', pal.accent, true],
+    [ui.web && ui.web.url ? ui.web.url : 'arcade web', pal.text],
+    ['Close the browser view (or /claude-arcade:web stop) to fight here again.', pal.dim],
+  ];
+  if (ui.webHint && ui.webHint > ui.tick) msg.push(['Buying, claiming and learning happen in the browser while it is open.', pal.gold]);
+  const top = Math.max(0, Math.floor((H - msg.length * 2) / 2));
+  for (let i = 0; i < H; i++) {
+    const k = i - top;
+    const m = k >= 0 && k % 2 === 0 ? msg[k / 2] : null;
+    if (!m) { lines.push(panelLine(W, pal.panel, [])); continue; }
+    const pad = Math.max(0, Math.floor((W - L.visWidth(m[0])) / 2));
+    lines.push(panelLine(W, pal.panel, [[' '.repeat(pad), pal.dim], [m[0], m[1], m[2]]]));
+  }
+  return lines;
+}
+
 function askQuit() {
   ui.confirmQuit = true;
   render(true);
@@ -359,7 +391,7 @@ function quitDialog(lines, cols, rows, pal) {
 
 function quit() {
   saveProgress();
-  try { require('fs').unlinkSync(L.HEARTBEAT); } catch {}
+  if (!ui.web) try { require('fs').unlinkSync(L.HEARTBEAT); } catch {}
   process.stdout.write(`${presenter ? presenter.deleteAll() : ''}${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
   process.exit(0);
 }
@@ -438,7 +470,9 @@ if (process.argv[2] === 'web' || process.argv.includes('--web')) {
     setInterval(saveProgress, 3000);
     const beat = () => { try { require('fs').writeFileSync(L.HEARTBEAT, String(Date.now())); } catch {} };
     beat(); setInterval(beat, 1000);
-    if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
+    ui.web = webOwner();
+  setInterval(() => { const w = webOwner(); if (ui.web && !w && ui.screen === 'game') enterGame(); ui.web = w; }, 1000);
+  if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
     setInterval(() => { ui.tick++; try { render(); } catch {} }, 100);
     render(true);
   };
