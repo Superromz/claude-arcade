@@ -154,6 +154,7 @@ function rollChest(opts = {}, rng = Math.random) {
   if (rng() < tier.buff * (kind === 'wave' ? 0.5 : 1)) {
     const w = { whetstone: 4, luckycharm: 3, wardrum: 2 };
     if (tier.index >= 2) Object.assign(w, { phoenixdraught: 1.5, midastonic: 1.5 });
+    if (tier.index >= 4) w.duckoracle = 1;
     r.buffs.push(weighted(rng, w));
   }
   return finish(r);
@@ -199,6 +200,7 @@ function applyReward(r, d = {}) {
     const mats = { ...(game.materials || {}) };
     for (const [id, n] of Object.entries(r.mats)) mats[id] = (mats[id] || 0) + n;
     game.materials = mats;
+    if (!r.practice) game.chests = { ...(game.chests || {}), [r.tier]: ((game.chests || {})[r.tier] || 0) + 1 };
     st.game = game;
     L.saveState(st);
     d.state = st;

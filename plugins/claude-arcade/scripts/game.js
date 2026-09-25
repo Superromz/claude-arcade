@@ -75,7 +75,7 @@ function frame(cols, rows) {
   out.push(hotbar(d, pal, W));
   ui.hotbarRow = out.length;
   const keys = TABS[ui.tab] === 'Shop'
-    ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    ? [['←→↑↓', 'browse'], ['[ ]', 'section'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Campaign'
     ? [['m', 'map'], ['j', 'chapter'], ['k', 'codex'], ['↑↓', 'select'], ['r', 'story'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Skills'

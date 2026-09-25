@@ -7,6 +7,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Added
+- **Shop:** 159 items (up from 42) with new kinds: trails, mounts, tents, banners, campfire colors and guild recruit outfits (shown at camp and on recruits). Daily Deals, 8 item sets with small damage or gold bonuses, and a Wardrobe for 3 saved outfits.
+
+### Added
 - **Campaign tab:** "The Great Refactor", a story in 8 chapters plus monthly seasons; a world map where your projects are kingdoms to liberate; a codex of lore. Rewards are titles, cosmetics and gold, never XP.
 
 ### Added

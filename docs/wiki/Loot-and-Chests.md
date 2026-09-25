@@ -51,8 +51,9 @@ stuff.
 ## Rewards
 
 - **Gold** goes straight into your hero's purse. Spend it in the [Shop](Shop).
-- **Gear** is a cosmetic from the catalog: a hat, back item, aura, pet or weapon glow. Things you
-  don't own yet are twice as likely to drop. New gear goes on right away if that slot is empty.
+- **Gear** is any cosmetic from the catalog: a hat, back item, aura, pet, weapon glow, trail,
+  mount, tent, banner, campfire color or recruit outfit. Things you don't own yet are twice as
+  likely to drop. New gear goes on right away if that slot is empty.
 - **Duplicates:** gear you already own turns into a quarter of its worth in gold, plus materials
   (Common gives 2 Bone Shards, Rare 1 Ember Core, Epic 1 Moonsilver Ore, Legendary 2 Starlight Dust).
 - **Materials** are kept as counts and are used for crafting (see below).
@@ -77,9 +78,13 @@ its own materials.
 
 ## Chest-only items
 
-These items are never sold. Win them from chests, or craft most of them in the [Shop](Shop): select
-the item and press `Enter` when you have the materials. Crafting costs no gold and equips the item.
-Items without a recipe are found in chests only.
+These items are never sold at their normal price. Win them from chests, or craft most of them in
+the [Shop](Shop): select the item and press `Enter` when you have the materials. Crafting costs no
+gold and equips the item. Items without a recipe are found in chests only. Now and then one of them
+turns up as a rare **Daily Deal** in the Shop.
+
+Wearing enough pieces of a set turns on its set bonus (a few percent more damage or gold, never
+XP). See [Shop](Shop#item-sets).
 
 | Set | Item | Slot | Rarity | Recipe |
 |---|---|---|---|---|
@@ -97,6 +102,7 @@ Items without a recipe are found in chests only.
 | | Starlight Edge | Weapon glow | Legendary | 6 Starlight Dust, 3 Moonsilver Ore |
 | | Star Sprite | Pet | Legendary | 14 Starlight Dust, 6 Ember Core |
 | | Starlight Aura | Aura | Legendary | Chests only |
+| (no set) | Ember Drake | Mount | Legendary | 24 Ember Core, 6 Starlight Dust |
 
 Chest-only buffs (these start as soon as they drop):
 
@@ -104,6 +110,7 @@ Chest-only buffs (these start as soon as they drop):
 |---|---|
 | Phoenix Draught | Double damage for 2 waves |
 | Midas Tonic | Triple gold for 2 waves |
+| Rubber Duck Oracle | +50% damage and +50% gold for 3 waves |
 
 ## The chest opening
 

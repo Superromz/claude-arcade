@@ -34,6 +34,9 @@ function stepMarch(target, t, hold) {
 // ---------- camp ----------
 
 function drawCamp(pc, { hx, fx, rollX, floorY, t, stage, hero }) {
+  // Shop camp items: tent, banner, mount and campfire colors (defaults if none).
+  const decor = require('./items').campDecor(hero, t);
+  decor.behind(pc, { hx, fx, rollX, floorY, t, stage });
   // Bedroll.
   const bx = rollX, by = floorY - 3, blanket = C.COLORS[hero.secondary] || C.COLORS.violet;
   for (let x = bx; x < bx + 14; x++) for (let y = by; y < floorY; y++) {
@@ -58,13 +61,13 @@ function drawCamp(pc, { hx, fx, rollX, floorY, t, stage, hero }) {
   }
   const lit = stage !== 'sleep';
   if (lit) {
-    pc.glow(fx + 4, floorY - 3, 28, [255, 140, 50], 0.4 + 0.08 * Math.sin(t * 0.7));
-    pc.sprite(fx, floorY - 6, X.FIRE[(t >> 2) % 3], X.BASE);
-    if (t % 3 === 0) emit(1, fx + 4, floorY - 6, [[255, 200, 90], [255, 120, 40]], { spread: 0.3, up: 0.8, grav: -0.02, life: 14 });
+    pc.glow(fx + 4, floorY - 3, 28, decor.fireGlow || [255, 140, 50], 0.4 + 0.08 * Math.sin(t * 0.7));
+    pc.sprite(fx, floorY - 6, X.FIRE[(t >> 2) % 3], decor.firePal || X.BASE);
+    if (t % 3 === 0) emit(1, fx + 4, floorY - 6, decor.fireSparks || [[255, 200, 90], [255, 120, 40]], { spread: 0.3, up: 0.8, grav: -0.02, life: 14 });
   } else {
     // Embers: logs with a slow red pulse.
-    pc.glow(fx + 4, floorY - 2, 14, [255, 90, 40], 0.22 + 0.06 * Math.sin(t * 0.2));
-    pc.sprite(fx, floorY - 2, X.FIRE[0].slice(4), X.BASE);
+    pc.glow(fx + 4, floorY - 2, 14, decor.fireGlow || [255, 90, 40], 0.22 + 0.06 * Math.sin(t * 0.2));
+    pc.sprite(fx, floorY - 2, X.FIRE[0].slice(4), decor.firePal || X.BASE);
     for (let i = 0; i < 5; i++) if (X.hash(i, t >> 2) > 0.35) pc.set(fx + 2 + i, floorY - 2 - (i % 2), X.hash(i, t >> 3) > 0.5 ? [255, 120, 40] : [200, 50, 30]);
   }
   pc.set(apex[0], apex[1] + 1, [60, 60, 70]); pc.set(apex[0], apex[1] + 2, [60, 60, 70]);
@@ -265,7 +268,7 @@ function drawScene(pc, d, pal) {
     else if (!allies && fighting) { const ph = (t + i * 7) % 28; if (ph <= 5) attack = ph; }
     const walk = !seated && (march.walking || walkIn > 0 || (busy && !alive.length));
     const hop = alertK < 3 ? 1 : 0;
-    SP.drawCompanion(pc, p, x, floorY - 13 - hop, { id, t: t + i * 2, attack, walk, flip, sit: seated && stage === 'sit', sleep: seated && stage === 'sleep', alpha: fresh });
+    (p.guild ? (...a) => require('./items').drawRecruit(...a, d.hero) : SP.drawCompanion)(pc, p, x, floorY - 13 - hop, { id, t: t + i * 2, attack, walk, flip, sit: seated && stage === 'sit', sleep: seated && stage === 'sleep', alpha: fresh });
   });
 
   // Hero pose.

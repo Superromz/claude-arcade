@@ -91,6 +91,7 @@ test('a cleared wave gives a chest that is saved, logged once and never gives XP
   assert.ok(Object.values(g.materials || {}).reduce((a, b) => a + b, 0) >= 1, 'materials saved as counts');
   assert.strictEqual(g.kills, 7); // other game fields survive
   assert.strictEqual(g.bestWave, 3);
+  assert.strictEqual(Object.values(g.chests || {}).reduce((a, b) => a + b, 0), 1, 'the chest is counted by tier');
   assert.strictEqual(state().xp, 500, 'chests never give XP');
   assert.strictEqual(ui.xpPending, 0);
   assert.strictEqual(lootEvents().length, events + 1);
@@ -120,6 +121,7 @@ test('practice waves give a small Wooden chest with no gear or buffs', () => {
   ui.battle.monsters[0].hp = 0; ui.battle.practice = false;
   Lt.lootTick(heroD(ses));
   assert.match(lootEvents().pop().text, /Wooden Chest \(practice wave 1\)/);
+  assert.strictEqual(state().game.chests, undefined, 'practice chests are not counted');
   assert.strictEqual(state().xp, 500);
 });
 
@@ -228,13 +230,14 @@ test('crafting turns materials into chest-only items; they are never sold', () =
   sel('slimecrown'); assert.strictEqual(shop.shopKey('\r', d), true);
   assert.deepStrictEqual(state().game.materials, { slime: 1, bone: 1 });
   assert.ok(state().game.inventory.includes('slimecrown'));
+  assert.strictEqual(state().game.crafted, 1, 'crafts are counted');
   assert.strictEqual(L.loadConfig().character.equipped.hat, 'slimecrown');
   assert.strictEqual(ui.battle.gold, 100, 'crafting costs no gold');
   assert.strictEqual(state().xp, 500, 'crafting never gives XP');
   assert.strictEqual(shop.craft('slimecrown', d), false, 'no crafting what you own');
-  // Every loot-only piece is either craftable or chest-only, and belongs to a set if it's gear.
+  // Every loot-only piece is either craftable or chest-only, and any set it names exists.
   for (const it of I.CATALOG.filter((x) => x.loot)) {
     if (it.craft) for (const m of Object.keys(it.craft)) assert.ok(I.getMaterial(m), `${it.id} needs ${m}`);
-    if (it.slot !== 'buff') assert.ok(I.SETS[it.set], it.id);
+    if (it.set) assert.ok(I.SETS[it.set], it.id);
   }
 });

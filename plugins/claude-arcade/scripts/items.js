@@ -1,7 +1,10 @@
 'use strict';
-// Shop items: cosmetics bought with gold that show on the hero, plus
-// consumable battle buffs, loot-only chest items (`loot: true`) and the
-// crafting materials chests drop. drawEquipment is called by sprites.drawHero right
+// Shop items: cosmetics bought with gold that show on the hero (hats, back
+// items, auras, pets, weapon glows, trails), at camp (mounts, tents, banners,
+// campfire colors) and on guild recruits (outfits), plus consumable battle
+// buffs, loot-only chest items (`loot: true`), item sets with small battle
+// bonuses, and the crafting materials chests drop. Most of the catalog lives
+// in catalog.js. drawEquipment is called by sprites.drawHero right
 // after the body is drawn; "behind" layers (auras, wings, capes) only paint
 // pixels outside the hero's silhouette so they read as sitting behind it.
 
@@ -19,8 +22,11 @@ const RARITY = {
   legendary: { name: 'Legendary', color: [255, 172, 44] },
 };
 
-const SLOTS = ['hat', 'back', 'aura', 'pet', 'weapon', 'buff'];
-const SLOT_NAMES = { hat: 'Hats', back: 'Back', aura: 'Auras', pet: 'Pets', weapon: 'Weapon glow', buff: 'Buffs' };
+const SLOTS = ['hat', 'back', 'aura', 'pet', 'weapon', 'trail', 'mount', 'tent', 'banner', 'fire', 'outfit', 'buff'];
+const SLOT_NAMES = { hat: 'Hats', back: 'Back', aura: 'Auras', pet: 'Pets', weapon: 'Weapon glow', trail: 'Trails', mount: 'Mounts', tent: 'Tents', banner: 'Banners', fire: 'Campfires', outfit: 'Recruits', buff: 'Buffs' };
+// Slots drawn on the hero itself; mounts, tents, banners and fires show at
+// camp (campDecor), outfits on guild recruits (drawRecruit).
+const HERO_SLOTS = ['hat', 'back', 'aura', 'pet', 'weapon', 'trail'];
 const K = [22, 18, 30];
 
 // ---------- drawing helpers ----------
@@ -157,7 +163,7 @@ const AURAS = [
       }
       o.rim([255, 150, 50], 0.3);
     } },
-  { id: 'frost', name: 'Frost Aura', price: 550, rarity: 'epic', desc: 'A cold snap follows your every step.',
+  { id: 'frost', name: 'Frost Aura', price: 550, rarity: 'epic', set: 'Frostbound', desc: 'A cold snap follows your every step.',
     draw(o, t) {
       o.field((dx, dy, d) => {
         if (d > 3) return;
@@ -297,7 +303,7 @@ function weaponGlow(core, hot, cold) {
 
 const WEAPONS = [
   { id: 'wfire', name: 'Flame Enchant', price: 240, rarity: 'rare', desc: 'Your weapon smoulders with embers.', draw: weaponGlow([255, 140, 40], [255, 240, 150], [200, 60, 30]) },
-  { id: 'wfrost', name: 'Frost Enchant', price: 240, rarity: 'rare', desc: 'Icy mist drifts from your weapon.', draw: weaponGlow([120, 210, 255], [240, 252, 255], [70, 130, 220]) },
+  { id: 'wfrost', name: 'Frost Enchant', price: 240, rarity: 'rare', set: 'Frostbound', desc: 'Icy mist drifts from your weapon.', draw: weaponGlow([120, 210, 255], [240, 252, 255], [70, 130, 220]) },
   { id: 'wvoid', name: 'Void Enchant', price: 480, rarity: 'epic', desc: 'A sliver of the abyss clings to it.', draw: weaponGlow([170, 70, 255], [240, 200, 255], [60, 20, 110]) },
 ];
 
@@ -329,11 +335,17 @@ const getMaterial = (id) => MATERIAL_BY_ID[id] || null;
 // Four item sets. Every piece is loot-only: `loot: true` keeps it out of the
 // shop's buy list, `price` is its worth (a duplicate converts to part of it),
 // and `craft` is its recipe (no recipe = found in chests only).
+// Wearing `need` pieces of a set turns on its bonus (never XP) and a
+// little set-colored flair around the hero.
 const SETS = {
-  Slimebound: { color: [110, 220, 110], desc: 'Gooey gear from the dungeon depths.' },
-  Bonecaller: { color: [214, 206, 180], desc: 'Relics of the restless dead.' },
-  Emberforged: { color: [255, 128, 40], desc: 'Tempered in the lava cave.' },
-  Starlight: { color: [150, 190, 255], desc: 'Woven from fallen stars.' },
+  Slimebound: { color: [110, 220, 110], desc: 'Gooey gear from the dungeon depths.', need: 2, bonus: { gold: 0.03 } },
+  Bonecaller: { color: [214, 206, 180], desc: 'Relics of the restless dead.', need: 3, bonus: { dmg: 0.05 } },
+  Emberforged: { color: [255, 128, 40], desc: 'Tempered in the lava cave.', need: 3, bonus: { dmg: 0.06 } },
+  Starlight: { color: [150, 190, 255], desc: 'Woven from fallen stars.', need: 3, bonus: { gold: 0.04, dmg: 0.04 } },
+  'Night Shift': { color: [120, 230, 120], desc: 'Coffee, hoodies and a rubber duck.', need: 3, bonus: { gold: 0.05 } },
+  'Ship It': { color: [80, 210, 110], desc: 'Green builds and fearless deploys.', need: 3, bonus: { dmg: 0.05 } },
+  'Wild West': { color: [220, 150, 80], desc: 'Dust, hats and a trusty pony.', need: 3, bonus: { gold: 0.05 } },
+  Frostbound: { color: [150, 210, 255], desc: 'Everything ice, everything cool.', need: 3, bonus: { dmg: 0.05 } },
 };
 
 const LOOT_HATS = [
@@ -488,11 +500,17 @@ const LOOT_BUFFS = [
   { id: 'midastonic', name: 'Midas Tonic', price: 150, rarity: 'epic', loot: true, desc: 'Triple gold for 2 waves.', buff: { gold: 3, waves: 2 }, icon: POTION([255, 214, 80], [196, 136, 36]) },
 ];
 
+const EXTRA = require('./catalog').build({ X, K, RAINBOW, rowsAt, weaponGlow, weaponTip, starGlow, wingsAt });
 const withSlot = (slot, list) => list.map((it) => ({ ...it, slot }));
+// Within a slot: shop items by price, then chest-only items by price.
+const bySlot = (slot, list) => withSlot(slot, [...list, ...EXTRA.items.filter((it) => it.slot === slot)])
+  .map((it, i) => [it, i]).sort(([a, i], [b, j]) => (a.loot ? 1 : 0) - (b.loot ? 1 : 0) || a.price - b.price || i - j).map(([it]) => it);
 const CATALOG = [
-  ...withSlot('hat', [...HATS, ...LOOT_HATS]), ...withSlot('back', [...BACKS, ...LOOT_BACKS]),
-  ...withSlot('aura', [...AURAS, ...LOOT_AURAS]), ...withSlot('pet', [...PETS, ...LOOT_PETS]),
-  ...withSlot('weapon', [...WEAPONS, ...LOOT_WEAPONS]), ...withSlot('buff', [...BUFFS, ...LOOT_BUFFS]),
+  ...bySlot('hat', [...HATS, ...LOOT_HATS]), ...bySlot('back', [...BACKS, ...LOOT_BACKS]),
+  ...bySlot('aura', [...AURAS, ...LOOT_AURAS]), ...bySlot('pet', [...PETS, ...LOOT_PETS]),
+  ...bySlot('weapon', [...WEAPONS, ...LOOT_WEAPONS]), ...bySlot('trail', []), ...bySlot('mount', []),
+  ...bySlot('tent', []), ...bySlot('banner', []), ...bySlot('fire', []), ...bySlot('outfit', []),
+  ...bySlot('buff', [...BUFFS, ...LOOT_BUFFS]),
 ];
 const BY_ID = Object.fromEntries(CATALOG.map((it) => [it.id, it]));
 const getItem = (id) => BY_ID[id] || null;
@@ -536,7 +554,7 @@ function silhouette(ch, pose, t, hat) {
     if (d <= 7) dist.push([dx, dy, d, up]);
   }
   const edge = pts.filter(([i, j]) => !on.has(`${i - 1},${j}`) || !on.has(`${i + 1},${j}`) || !on.has(`${i},${j - 1}`) || !on.has(`${i},${j + 1}`));
-  const res = { on, body, dist, edge };
+  const res = { on, body, dist, edge, pts };
   if (maskCache.size > 200) maskCache.clear();
   maskCache.set(key, res);
   return res;
@@ -578,13 +596,30 @@ function drawEquipment(pc, ch, { x, y, px, pal, t = 0, pose = 'stand', flip = fa
       }
     },
     field: (fn) => { for (const [dx, dy, d, up] of sil.dist) fn(dx, dy, d, up); },
+    silPts: sil.pts,
     rim: (c, a) => { for (const [dx, dy] of sil.edge) { const X0 = px(dx), Y0 = y + dy; if (inPc(X0, Y0)) pc.set(X0, Y0, X.mix(pc.get(X0, Y0), c, a)); } },
   };
+  if (eq.trail && isMoving(pose, t)) eq.trail.trail(o, t);
   if (eq.aura) eq.aura.draw(o, t);
   if (eq.back) eq.back.draw(o, t);
   if (eq.hat) drawHat(pc, ch, eq.hat, o, { y, px, pal, t, pose });
   if (eq.pet) eq.pet.draw(o, t);
   if (eq.weapon) eq.weapon.draw(o, t);
+  // Set flair: motes in each active set's color circle the hero.
+  setStatus(ch).filter((st) => st.active).forEach((st, k) => {
+    for (let m = 0; m < 2; m++) {
+      const a = t * 0.12 + m * Math.PI + k * 1.3;
+      const mx = Math.round(7.5 + Math.cos(a) * 10), my = Math.round(13 + Math.sin(a) * 4);
+      if (Math.sin(a) < 0) o.behind(mx, my, st.color); else o.set(mx, my, X.mix(st.color, [255, 255, 255], 0.4));
+    }
+  });
+}
+
+// Trails show while the hero walks or right after it attacks.
+function isMoving(pose, t) {
+  if (/^walk/.test(pose) || pose === 'run') return true;
+  const a = uiState().heroAction;
+  return !!(a && t >= a.t && t - a.t <= 6);
 }
 
 // A hat replaces the class headgear: repaint those pixels with the bare head
@@ -613,6 +648,18 @@ function drawHat(pc, ch, hat, o, { y, px, pal, t, pose }) {
 // Draw an item into a 20×10 pixel area at (ox, oy). Hats, back items, auras
 // and weapon glows are shown on a crop of the given hero; pets and buffs alone.
 function drawSwatch(pc, item, hero, ox, oy, t = 0) {
+  const tgt = { set: (x, y, c) => pc.set(x, y, c), glow: (x, y, r, c, s) => pc.glow(x, y, r, c, s) };
+  if (item.slot === 'trail') { sprites().drawHero(pc, { ...hero, equipped: { trail: item.id } }, ox + 9, oy - 13, { t, pose: 'walk' }); return; }
+  if (item.slot === 'mount') { const m = item.mount; m.draw(tgt, ox + Math.round((20 - m.w) / 2), oy + Math.min(m.h, 12), t, {}); return; }
+  if (item.slot === 'tent') { EXTRA.drawTent(tgt, ox + 2, oy + 10, 17, 9, item.tent, t); return; }
+  if (item.slot === 'banner') { EXTRA.drawBanner(tgt, ox + 6, oy + 11, 12, item.banner, t); return; }
+  if (item.slot === 'fire') { drawFire(tgt, ox + 6, oy + 10, item, t); return; }
+  if (item.slot === 'outfit') {
+    const h2 = { ...hero, equipped: { outfit: item.id } };
+    drawRecruit(pc, { cls: 'knight' }, ox + 3, oy + 3, { id: 'swatch-a', t }, h2);
+    drawRecruit(pc, { cls: 'ranger' }, ox + 11, oy + 3, { id: 'swatch-b', t: t + 3 }, h2);
+    return;
+  }
   if (item.slot === 'buff') { rowsAt({ set: (dx, dy, c) => pc.set(ox + 2 + dx, oy + dy, c) }, item.icon.rows, item.icon.pal, 0, 0); return; }
   if (item.slot === 'pet') {
     const sx = ox + 14, sy = oy - (item.ground ? 14 : 2);
@@ -625,6 +672,149 @@ function drawSwatch(pc, item, hero, ox, oy, t = 0) {
   const tipY = weaponTip(hero, 'stand')[1];
   const off = item.swatchY ?? ({ hat: 0, back: 9, aura: 3, weapon: Math.max(0, Math.min(14, tipY - 5)) }[item.slot] || 0);
   sprites().drawHero(pc, ch, ox + 2, oy - off, { t, pose: 'stand' });
+}
+
+// ---------- camp, mounts, recruits ----------
+
+const cycle = (list, t, speed = 0.2) => { const k = (t * speed) % list.length, i = Math.floor(k); return X.mix(list[i], list[(i + 1) % list.length], k - i); };
+
+// Fire palette ({F, f, r} for X.FIRE) and glow color for a campfire item.
+function firePalette(item, t = 0) {
+  const f = item && item.fire;
+  if (!f) return null;
+  if (f.rainbow) return { F: X.mix(cycle(RAINBOW, t, 0.3), [255, 255, 255], 0.5), f: cycle(RAINBOW, t + 2, 0.3), r: cycle(RAINBOW, t + 4, 0.3), glow: cycle(RAINBOW, t, 0.3) };
+  return f;
+}
+
+// A campfire (logs and flames) with its bottom at baseY, for swatches.
+function drawFire(s, x, baseY, item, t) {
+  const fp = firePalette(item, t) || { F: [255, 220, 90], f: [255, 140, 40], r: [210, 60, 30], glow: [255, 140, 50] };
+  if (s.glow) s.glow(x + 4, baseY - 3, 10, fp.glow, 0.5);
+  const frame = X.FIRE[(t >> 2) % 3];
+  const pal = { ...X.BASE, F: fp.F, f: fp.f, r: fp.r };
+  frame.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] !== '.' && pal[row[i]]) s.set(x + i, baseY - frame.length + j, pal[row[i]]); });
+}
+
+// What the idle camp should show for this hero: the equipped tent, banner,
+// mount and campfire colors. `behind(pc, ...)` draws the tent, banner and
+// mount (call it first in scene.js drawCamp); firePal / fireGlow / fireSparks
+// recolor the campfire. Everything is null when nothing is equipped, so the
+// default camp looks exactly as before.
+function campDecor(hero, t = 0) {
+  const eq = equipped(hero || {});
+  const fp = firePalette(eq.fire, t);
+  return {
+    tent: eq.tent || null, banner: eq.banner || null, mount: eq.mount || null, fire: eq.fire || null,
+    firePal: fp ? { ...X.BASE, F: fp.F, f: fp.f, r: fp.r } : null,
+    fireGlow: fp ? fp.glow : null,
+    fireSparks: fp ? [fp.F, fp.f] : null,
+    behind(pc, { hx, fx, rollX = fx + 13, floorY, t: tt = t, stage = 'stand', W = pc.w } = {}) {
+      const s = { set: (x, y, c) => pc.set(x, y, c), glow: (x, y, r, c, a) => pc.glow(x, y, r, c, a) };
+      // Tent and mount stand past the fire and bedroll; the banner is planted
+      // just behind the hero's log. Both fall back to the left on narrow scenes.
+      const r0 = Math.max(fx + 12, rollX + 16);
+      const tw = 26, th = 18;
+      let tx = null;
+      if (eq.tent) {
+        tx = r0 + tw <= W - 1 ? r0 : hx - tw - 4 >= 0 ? hx - tw - 4 : fx + 12;
+        EXTRA.drawTent(s, tx, floorY, tw, th, eq.tent.tent, tt);
+      }
+      if (eq.banner) EXTRA.drawBanner(s, hx - 3 >= 2 ? hx - 3 : fx + 11, floorY, 22, eq.banner.banner, tt);
+      if (eq.mount) {
+        const m = eq.mount.mount;
+        let x = tx !== null ? tx + tw - Math.round(m.w / 2) : r0;
+        let flip = true;
+        if (x + m.w > W - 1) { x = tx !== null ? tx - Math.round(m.w / 2) : Math.max(-4, hx - m.w - 6); flip = x > hx; }
+        m.draw(s, x, floorY, tt, { sleep: stage === 'sleep', flip });
+      }
+    },
+  };
+}
+
+// A guild recruit wearing the hero's recruit outfit: the companion is drawn
+// as usual, then its clothes are tinted and the outfit's hat goes on top.
+// Without an outfit this is exactly sprites.drawCompanion.
+function drawRecruit(pc, who, x, y, opts = {}, hero) {
+  const sp = sprites();
+  const of = equipped(hero || {}).outfit;
+  if (!of) return sp.drawCompanion(pc, who, x, y, opts);
+  const o = of.outfit;
+  const x0 = Math.floor(x) - 1, y0 = Math.floor(y), bw = 14, bh = 15;
+  const inPc = (X0, Y0) => X0 >= 0 && Y0 >= 0 && X0 < pc.w && Y0 < pc.h;
+  const before = [];
+  if (o.tint) for (let j = 0; j < bh; j++) for (let i = 0; i < bw; i++) before.push(inPc(x0 + i, y0 + j) ? pc.get(x0 + i, y0 + j) : null);
+  const res = sp.drawCompanion(pc, who, x, y, opts);
+  const { walk = false, t = 0, flip = false } = opts;
+  const sit = !!(opts.sit || opts.sleep), dozing = !!opts.sleep;
+  const attack = Number.isFinite(opts.attack) ? opts.attack : null;
+  const headDy = (!walk && attack === null && t % (dozing ? 30 : 20) >= (dozing ? 15 : 10) ? 1 : 0) + (sit ? 2 : 0);
+  const dy = walk && (t >> 1) % 2 ? -1 : 0;
+  if (o.tint) {
+    for (let j = 7 + (sit ? 1 : 0); j < 13; j++) for (let i = 0; i < bw; i++) {
+      const X0 = x0 + i, Y0 = y0 + j + dy;
+      if (!inPc(X0, Y0)) continue;
+      const a = before[(j + dy) * bw + i], b = pc.get(X0, Y0);
+      if (!a || !b || (a[0] === b[0] && a[1] === b[1] && a[2] === b[2])) continue;
+      if (b[0] + b[1] + b[2] < 150) continue; // keep outlines
+      pc.set(X0, Y0, X.mix(b, o.tint, 0.55));
+    }
+  }
+  const hat = o.hat || [];
+  const hy = Math.floor(y) + headDy + dy + (o.hatDy || 0) - (hat.length - 1);
+  hat.forEach((row, j) => { for (let i = 0; i < row.length; i++) {
+    const c = o.pal[row[i]];
+    if (c) pc.set(flip ? Math.floor(x) + 10 - i : Math.floor(x) + i, hy + j, c);
+  } });
+  return res;
+}
+
+// Shop preview for items that don't sit on the hero (w×26 pixel canvas).
+// Returns false when the item is drawn on the hero instead.
+function drawPreview(pc, item, hero, t = 0) {
+  const s = { set: (x, y, c) => pc.set(x, y, c), glow: (x, y, r, c, a) => pc.glow(x, y, r, c, a) };
+  const W = pc.w, floor = 24;
+  if (item.slot === 'mount') {
+    const m = item.mount;
+    m.draw(s, Math.max(0, W - m.w - 1), floor, t, { flip: true });
+    sprites().drawHero(pc, hero, -2, floor - 24, { t, pose: 'stand' });
+    return true;
+  }
+  if (['tent', 'banner', 'fire'].includes(item.slot)) {
+    const eq = { ...((hero && hero.equipped) || {}), [item.slot]: item.id };
+    const e = equipped({ equipped: eq });
+    if (e.tent) EXTRA.drawTent(s, W - 24, floor, 22, 16, e.tent.tent, t);
+    if (e.banner) EXTRA.drawBanner(s, 2, floor, 20, e.banner.banner, t);
+    drawFire(s, 10, floor, e.fire || null, t);
+    return true;
+  }
+  if (item.slot === 'outfit') {
+    const h2 = { ...hero, equipped: { outfit: item.id } };
+    ['knight', 'mage', 'rogue'].forEach((cls, i) => drawRecruit(pc, { cls }, 2 + i * 9, floor - 13, { id: 'preview-' + cls, t: t + i * 5 }, h2));
+    return true;
+  }
+  return false;
+}
+
+// ---------- sets ----------
+
+const SET_PIECES = Object.fromEntries(Object.keys(SETS).map((n) => [n, CATALOG.filter((it) => it.set === n).length]));
+
+// For every set: pieces worn, pieces needed for the bonus, and whether it's on.
+function setStatus(ch) {
+  const counts = {};
+  for (const it of Object.values(equipped(ch))) if (it.set) counts[it.set] = (counts[it.set] || 0) + 1;
+  return Object.entries(SETS).map(([name, st]) => {
+    const pieces = SET_PIECES[name] || 0, need = Math.min(st.need || 3, pieces), have = counts[name] || 0;
+    return { name, have, need, pieces, active: pieces > 0 && have >= need, bonus: st.bonus || {}, color: st.color };
+  });
+}
+const activeSets = (ch) => setStatus(ch).filter((st) => st.active);
+const setBonusText = (bonus) => [bonus.dmg ? `+${Math.round(bonus.dmg * 100)}% damage` : '', bonus.gold ? `+${Math.round(bonus.gold * 100)}% gold` : ''].filter(Boolean).join(', ');
+// Battle multiplier from the hero on screen (scene.js keeps ui.frameData).
+function setMultiplier(key, ch) {
+  const hero = ch || ((uiState().frameData || {}).hero);
+  if (!hero) return 1;
+  return activeSets(hero).reduce((m, st) => m * (1 + (st.bonus[key] || 0)), 1);
 }
 
 // ---------- buffs ----------
@@ -648,11 +838,14 @@ function consumeWave() {
 }
 
 const buffOf = (b) => (getItem(b.id) || {}).buff || {};
-const damageMultiplier = () => buffs().reduce((m, b) => m * (buffOf(b).dmg || 1), 1);
-const goldMultiplier = () => buffs().reduce((m, b) => m * (buffOf(b).gold || 1), 1);
+// Buffs times any active set bonus. Neither ever touches XP.
+const damageMultiplier = () => buffs().reduce((m, b) => m * (buffOf(b).dmg || 1), 1) * setMultiplier('dmg');
+const goldMultiplier = () => buffs().reduce((m, b) => m * (buffOf(b).gold || 1), 1) * setMultiplier('gold');
 
 module.exports = {
   RARITY, SLOTS, SLOT_NAMES, CATALOG, getItem, equipped, drawEquipment, drawSwatch,
-  MATERIALS, getMaterial, SETS,
+  MATERIALS, getMaterial, SETS, HERO_SLOTS,
+  campDecor, drawRecruit, drawPreview, firePalette, setStatus, activeSets, setBonusText, setMultiplier,
+  drawTent: EXTRA.drawTent, drawBanner: EXTRA.drawBanner,
   buffs, addBuff, consumeWave, damageMultiplier, goldMultiplier,
 };

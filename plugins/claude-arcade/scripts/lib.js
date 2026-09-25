@@ -491,6 +491,10 @@ const SET_PIECES = {
   Bonecaller: ['skullhelm', 'bonewings', 'bonepup', 'wbone'],
   Emberforged: ['flamecrown', 'phoenixwings', 'emberling', 'wember'],
   Starlight: ['starcirclet', 'staraura', 'starsprite', 'wstar'],
+  'Night Shift': ['beanie', 'coffeeaura', 'duck', 'keycaps', 'bn_coffee', 'of_hoodie'],
+  'Ship It': ['socrown', 'mergecape', 'wgreen', 'rocket', 'bn_ship', 'of_ship'],
+  'Wild West': ['cowboy', 'poncho', 'tumbleweed', 'pony', 'tent_teepee', 'bn_west', 'fire_ember', 'of_cowboy'],
+  'Frostbound': ['icecrown', 'snowcape', 'frost', 'penguin', 'wfrost', 'snowtrail', 'polarbear', 'tent_igloo', 'bn_frost', 'fire_blue', 'of_frost'],
 };
 const MATERIAL_IDS = ['slime', 'bone', 'ember', 'moonsilver', 'starlight'];
 const inventoryOf = (s) => (Array.isArray(gameOf(s).inventory) ? gameOf(s).inventory : []);
@@ -643,7 +647,11 @@ const ACHIEVEMENTS = [
   A('set-bonecaller', 'Bone Collector', 'Own every piece of the Bonecaller set', SET_PIECES.Bonecaller.length, setOwned('Bonecaller')),
   A('set-emberforged', 'Forged in Fire', 'Own every piece of the Emberforged set', SET_PIECES.Emberforged.length, setOwned('Emberforged')),
   A('set-starlight', 'Starborn', 'Own every piece of the Starlight set', SET_PIECES.Starlight.length, setOwned('Starlight')),
-  A('sets-all', 'Set Collector', 'Complete all four item sets', 4, setsDone),
+  A('set-night shift', 'Graveyard Shift', 'Own every piece of the Night Shift set', SET_PIECES['Night Shift'].length, setOwned('Night Shift')),
+  A('set-ship it', 'Shipped', 'Own every piece of the Ship It set', SET_PIECES['Ship It'].length, setOwned('Ship It')),
+  A('set-wild west', 'Sheriff of the Codebase', 'Own every piece of the Wild West set', SET_PIECES['Wild West'].length, setOwned('Wild West')),
+  A('set-frostbound', 'Cold Storage', 'Own every piece of the Frostbound set', SET_PIECES['Frostbound'].length, setOwned('Frostbound')),
+  A('sets-all', 'Set Collector', 'Complete all eight item sets', 8, setsDone),
   A('mats-50', 'Hoarder', 'Hold 50 crafting materials', 50, (s) => sumOf(matsOf(s))),
   A('mats-kinds', 'Alchemist\'s Shelf', 'Hold every kind of crafting material', MATERIAL_IDS.length, (s) => MATERIAL_IDS.filter((m) => matsOf(s)[m] > 0).length),
   A('mats-starlight', 'Stardust Collector', 'Hold 10 Starlight Dust', 10, (s) => matsOf(s).starlight || 0),
