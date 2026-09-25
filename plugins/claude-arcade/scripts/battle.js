@@ -80,7 +80,7 @@ function spawnBoss(d, W, floorY) {
     type, boss: true, scale, lvl: d.lvl + 2, xp, hp, max: hp, lag: hp, color: 0, seed: 0, x: W + 2, slot: 0, y: floorY - h, baseY: floorY - h, floorY,
     flash: 0, frozen: 0, lunge: 0, windup: 0, kb: 0, yOff: 0, at: 0, phase: 0, slamAt: ui.tick + 55, entering: true,
   });
-  ui.celebrate = { kind: 'boss', text: `BOSS: ${def.name}`, until: ui.tick + 30 };
+  ui.celebrate = { kind: 'bossIntro', text: `${def.name} approaches!`, until: ui.tick + 30 };
   shakeFor(b, 6);
   try { L.logEvent({ sid: d.sid, kind: 'combo', text: `A boss appears: ${def.name}!` }); } catch {}
 }

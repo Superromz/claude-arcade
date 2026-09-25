@@ -170,6 +170,7 @@ function levelUpSpec(d, pal, from, to, age, dur) {
 
 function eventSpec(pal, c, age, dur) {
   const text = String(c.text || '');
+  if (c.kind === 'bossIntro') return { word: 'BOSS!', colors: [WHITE, pal.bad, X.shade(pal.bad, 0.6)], lines: [[['! ', pal.bad, true], [text || 'A boss approaches!', pal.text, true]]], age, dur, sparkle: [pal.bad, pal.gold] };
   if (c.kind === 'boss') return { word: 'VICTORY', colors: [WHITE, pal.gold, pal.bad], lines: [[['× ', pal.bad, true], [text || 'Boss defeated!', pal.text, true]]], age, dur, sparkle: [pal.gold, pal.bad, WHITE] };
   if (c.kind === 'achievement') return { word: 'TROPHY', colors: [WHITE, pal.gold, pal.magic], lines: [[['★ ', pal.gold, true], [text || 'Achievement unlocked', pal.text, true]]], age, dur, sparkle: [pal.gold, pal.magic, WHITE] };
   if (c.kind === 'purchase') return { word: 'LOOT!', colors: [WHITE, pal.gold, X.shade(pal.gold, 0.7)], lines: [[['◉ ', pal.gold, true], [text || 'Item purchased', pal.text, true]]], age, dur, sparkle: [pal.gold, WHITE] };
