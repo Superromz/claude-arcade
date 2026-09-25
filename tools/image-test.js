@@ -8,7 +8,7 @@ const zlib = require('zlib');
 const H = require('../plugins/claude-arcade/scripts/hd.js');
 
 const S = 72;
-const rgba = H.testImage(S);
+const { rgba } = H.testImage(S);
 const out = process.stdout;
 const say = (s) => out.write(`${s}\r\n`);
 
