@@ -6,7 +6,12 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+### Added
+- **Guild:** finished agents can ask to join; recruit up to 12, take 3 into battle, and level them up. New Guild tab.
+- 12 bosses (3 per biome) that rotate without repeats, plus rematches with earlier bosses, and 8 new monsters.
+
 ### Fixed
+- The Warlock's +50% XP from agents applies again.
 - A boss arriving now shows a BOSS! banner instead of VICTORY.
 
 ## [0.5.0] - 2026-09-25

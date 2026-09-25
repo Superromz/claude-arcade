@@ -26,6 +26,7 @@ runs in the CLI, next to Claude, so it's something to play (or just watch) while
 | [Hero Roster](Hero-Roster) | Keeping several heroes, each with their own progress |
 | [Combat and Spells](Combat-and-Spells) | Waves, bosses, spells, crits, the hotbar and gold |
 | [Companions](Companions) | How Claude's agents join your party and fight |
+| [Guild](Guild) | Recruit finished agents as permanent, leveling companions |
 | [Progression and XP](Progression-and-XP) | Where XP comes from, levels, HP, combos, stats and achievements |
 | [Biomes and Themes](Biomes-and-Themes) | Dungeon, forest, lava cave, castle, and the three themes |
 | [Status Line and Toasts](Status-Line-and-Toasts) | The HUD under Claude's prompt and the messages it prints |

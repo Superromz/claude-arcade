@@ -10,6 +10,7 @@
 - [Hero Roster](Hero-Roster)
 - [Combat and Spells](Combat-and-Spells)
 - [Companions](Companions)
+- [Guild](Guild)
 - [Progression and XP](Progression-and-XP)
 - [Biomes and Themes](Biomes-and-Themes)
 - [Status Line and Toasts](Status-Line-and-Toasts)

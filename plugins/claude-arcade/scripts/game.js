@@ -5,6 +5,8 @@
 //   node game.js                       play (follows the latest session)
 //   node game.js --snapshot [tab]      print one frame and exit
 //   node game.js --snapshot create     print the character creator
+//   node game.js --snapshot-hd out.png render the HD scene to a PNG
+//   node game.js --hd-test             check that this terminal shows Kitty images
 //
 // Keys: 1-6 / space cast spells · click monsters to strike · w summon a wave
 //       tab or ←→ views · c hero · t theme · p session · q quit
@@ -23,8 +25,10 @@ const { FIELDS, FIELD_LABEL, OPTIONS, openCreator, creatorFrame, creatorKey } = 
 const { openRoster, rosterFrame, rosterKey } = require('./roster');
 const { shopTab, shopKey } = require('./shop');
 const { projectsTab } = require('./projects');
+const { guildTab, guildKey } = require('./guild');
 const { applyOverlay } = require('./celebrate');
 const { sectionHeader } = require('./panels');
+const HD = require('./hd');
 
 // ---------- frame ----------
 
@@ -56,7 +60,7 @@ function frame(cols, rows) {
     }
   } else {
     ui.layout = null;
-    const body = [heroTab, partyTab, trophiesTab, shopTab, projectsTab][ui.tab - 1](d, pal, W, bodyH).slice(0, bodyH);
+    const body = [heroTab, partyTab, guildTab, trophiesTab, shopTab, projectsTab][ui.tab - 1](d, pal, W, bodyH).slice(0, bodyH);
     while (body.length < bodyH) body.push(panelLine(W, pal.panel, []));
     out.push(...body);
   }
@@ -65,6 +69,8 @@ function frame(cols, rows) {
   ui.hotbarRow = out.length;
   const keys = TABS[ui.tab] === 'Shop'
     ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    : TABS[ui.tab] === 'Guild'
+    ? [['↑↓←→', 'select'], ['a', 'accept'], ['x', 'dismiss / release'], ['enter', 'fight / rest'], ['tab', 'view'], ['q', 'quit']]
     : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']];
   out.push(footer(pal, W, keys));
   return applyOverlay(out, d, pal, W, rows);
@@ -72,13 +78,52 @@ function frame(cols, rows) {
 
 // ---------- main loop ----------
 
+let presenter = null; // HD (Kitty image) output, when HD mode is on
+
 function render(force = false) {
   const cols = process.stdout.columns || 100, rows = process.stdout.rows || 30;
+  const hd = HD.state.on && presenter;
+  if (hd) HD.state.render = presenter.ready();
+  ui.hdFrame = null; ui.hdBlank = null;
   const lines = approvalDialog(frame(cols, rows).slice(0, rows), cols, rows, UI[L.loadConfig().theme] || UI.rpg);
   let s = '';
   lines.forEach((l, i) => { if (force || ui.prev[i] !== l) s += `${ESC}${i + 1};1H${l}`; });
   ui.prev = lines;
-  if (s) process.stdout.write(s);
+  if (hd) { if (s) presenter.write(s); presentHD(lines); }
+  else if (s) process.stdout.write(s);
+}
+
+// Place the HD scene image over its blank rows. Rows that a dialog or
+// celebration overlay drew over are left out so the text stays visible.
+function presentHD(lines) {
+  const lay = ui.layout;
+  if (!ui.hdBlank || !lay) return presenter.hide(); // no scene on screen this frame
+  const f = ui.hdFrame;
+  if (!f) return; // frame skipped (terminal still busy): keep the last image
+  const clean = [];
+  let a = -1;
+  for (let r = 0; r <= f.rows; r++) {
+    const ok = r < f.rows && String(lines[lay.top + r] || '').startsWith(ui.hdBlank);
+    if (ok && a < 0) a = r;
+    if (!ok && a >= 0) { clean.push([a, r]); a = -1; }
+  }
+  if (!clean.length) return presenter.hide();
+  presenter.present(f, lay.top + 1, 1, clean);
+}
+
+// Switch HD on/off live and remember the choice (bound to a key in onKey).
+function toggleHD() {
+  const cfg = L.loadConfig();
+  if (HD.state.on) {
+    if (presenter) presenter.hide();
+    HD.state.on = false; cfg.hd = false;
+  } else {
+    HD.state.on = true; cfg.hd = true;
+    presenter = presenter || new HD.Presenter(process.stdout);
+  }
+  L.saveConfig(cfg);
+  ui.prev = [];
+  render(true);
 }
 
 function onKey(key) {
@@ -91,6 +136,7 @@ function onKey(key) {
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (key === 'q' || key === '\x1b') return quit();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
+  if (TABS[ui.tab] === 'Guild' && key !== '\t' && key !== 'q' && guildKey(key, d)) return render(true);
   if (/^[1-6]$/.test(key)) playerCast(d, Number(key) - 1);
   if (key === ' ') playerCast(d, 0);
   if (key === 'w' && !aliveMonsters().length) { ui.battle.practice = true; spawnWave(ui.sceneW || 200, Math.floor(ui.heroY + 24), d.lvl); }
@@ -243,7 +289,42 @@ function quit() {
   process.exit(0);
 }
 
-if (process.argv.includes('--snapshot')) {
+if (process.argv.includes('--hd-test')) {
+  (async () => {
+    const out = process.stdout;
+    const det = HD.detect(process.env, L.loadConfig());
+    const p = await HD.probe(process.stdin, out);
+    const img = HD.testImage(96);
+    const cw = p.cw || 8, ch = p.ch || 16, c = Math.max(4, Math.round(96 / cw)), r = Math.max(2, Math.round(96 / ch));
+    out.write(`\n${'\n'.repeat(r)}${ESC}${r}A\r` + HD.kittyTransmit(img.rgba, img.w, img.h, { id: 7399, cols: c, rows: r }) + `${ESC}${r}B\r\n`);
+    console.log('Do you see a colored gradient square above? If yes, HD mode works in this terminal.');
+    console.log('');
+    console.log(`  terminal:        ${process.env.TERM_PROGRAM || process.env.TERM || 'unknown'}`);
+    console.log(`  HD mode:         ${det.on ? 'on' : 'off'} (${det.why})`);
+    console.log(`  cell size:       ${p.cw ? `${p.cw}x${p.ch}px (${p.source})` : 'not reported, using 8x17'}`);
+    console.log(`  graphics query:  ${p.graphics === true ? 'OK' : p.graphics === false ? 'no answer' : 'no reply at all'}`);
+    console.log('');
+    console.log('Turn HD on or off with ARCADE_HD=1 / ARCADE_HD=0, "hd": true/false in ~/.claude/arcade/config.json, or g in the game.');
+    process.exit(0);
+  })();
+} else if (process.argv.includes('--snapshot-hd')) {
+  const file = process.argv[process.argv.indexOf('--snapshot-hd') + 1] || 'scene-hd.png';
+  const cols = Number(process.env.COLUMNS) || 100, rows = Number(process.env.LINES) || 28;
+  const cell = String(process.env.ARCADE_CELL || '8x16').match(/^(\d+)x(\d+)$/) || [0, 8, 16];
+  Object.assign(HD.state, { on: true, cw: Number(cell[1]), ch: Number(cell[2]), render: false });
+  ui.battle.lastEventT = 0;
+  const g = L.loadState().game || {};
+  ui.battle.gold = g.gold || 0; ui.battle.kills = g.kills || 0;
+  const warm = Number(process.env.ARCADE_WARMUP) || 40;
+  for (ui.tick = 0; ui.tick < warm; ui.tick++) frame(cols, rows);
+  HD.state.render = true;
+  const t0 = Date.now();
+  frame(cols, rows);
+  const f = ui.hdFrame;
+  if (!f) { console.error('No scene in this view.'); process.exit(1); }
+  require('fs').writeFileSync(file, HD.png(f.rgba, f.w, f.h));
+  console.log(`${file}: ${f.w}x${f.h}px for ${f.cols}x${f.rows} cells, rendered in ${f.cost}ms (frame ${Date.now() - t0}ms)`);
+} else if (process.argv.includes('--snapshot')) {
   const arg = process.argv[process.argv.indexOf('--snapshot') + 1];
   const cols = Number(process.env.COLUMNS) || 100, rows = Number(process.env.LINES) || 28;
   if (arg === 'create') openCreator(snapshotData());
@@ -261,16 +342,25 @@ if (process.argv.includes('--snapshot')) {
   const g = L.loadState().game || {};
   ui.battle.gold = g.gold || 0; ui.battle.kills = g.kills || 0;
   process.stdout.write(`${ESC}?1049h${ESC}?25l${ESC}2J${ESC}?1000h${ESC}?1006h`);
-  process.stdin.setRawMode(true);
-  process.stdin.setEncoding('utf8');
-  process.stdin.on('data', onKey);
-  process.stdout.on('resize', () => { process.stdout.write(`${ESC}2J`); render(true); });
-  process.on('SIGINT', quit);
-  process.on('exit', () => { saveProgress(); process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`); });
-  setInterval(saveProgress, 3000);
-  const beat = () => { try { require('fs').writeFileSync(L.HEARTBEAT, String(Date.now())); } catch {} };
-  beat(); setInterval(beat, 1000);
-  if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
-  setInterval(() => { ui.tick++; try { render(); } catch {} }, 100);
-  render(true);
+  const start = () => {
+    if (HD.state.on) presenter = new HD.Presenter(process.stdout);
+    process.stdin.setRawMode(true);
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', onKey);
+    process.stdin.resume();
+    process.stdout.on('resize', () => { if (presenter) presenter.hide(); process.stdout.write(`${ESC}2J`); render(true); });
+    process.on('SIGINT', quit);
+    process.on('exit', () => {
+      saveProgress();
+      process.stdout.write(`${presenter ? presenter.deleteAll() : ''}${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
+    });
+    setInterval(saveProgress, 3000);
+    const beat = () => { try { require('fs').writeFileSync(L.HEARTBEAT, String(Date.now())); } catch {} };
+    beat(); setInterval(beat, 1000);
+    if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
+    setInterval(() => { ui.tick++; try { render(); } catch {} }, 100);
+    render(true);
+  };
+  // HD needs the cell size in pixels: ask the terminal first (<=300ms, only when HD is on).
+  HD.init({ cfg: L.loadConfig() }).catch(() => { HD.state.on = false; }).then(start);
 }

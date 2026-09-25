@@ -57,3 +57,7 @@ Companions only attack while Claude is working (or during a practice wave).
 
 Companions are temporary for now. Recruiting agents as permanent companions who level up and camp
 with your hero is on the [Roadmap](Roadmap).
+
+## Keeping companions
+
+Companions leave when their agent finishes, but they can ask to join your **[Guild](Guild)**. Recruits stay with you, fight in every battle, and level up.

@@ -48,9 +48,10 @@ it.
 | 1 | Adventure | The battlefield (or the camp), plus your hero card, companions and quest log on wide terminals |
 | 2 | Hero | Portrait, stats, XP, tokens, gold, kills, spellbook and your "Deeds" |
 | 3 | Party | Your companions and recent adventures |
-| 4 | Trophies | Achievements with progress bars |
-| 5 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
-| 6 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
+| 4 | [Guild](Guild) | Recruit finished agents as permanent companions |
+| 5 | Trophies | Achievements with progress bars |
+| 6 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
+| 7 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
 
 Switch tabs with `tab`, `←` `→`, or a click on the tab name. The number keys are the hotbar, not tab
 shortcuts.
