@@ -61,6 +61,15 @@ docs/                               wiki pages and images
 | `items.js` | Shop catalog, equipment drawing on the hero, and battle buffs (damage and gold multipliers, counted down per cleared wave) |
 | `shop.js` | The Shop tab: item cards, hero preview, buying, equipping |
 | `projects.js` | The Projects tab |
+| `campaign.js` | Campaign tab: project kingdoms on the world map, story chapters, monthly seasons, codex |
+| `skills.js` | Skills tab: class skill tree (8 tiers, Awakened capstones), respec, paragon, hotbar loadout; `mods(d)` feeds node effects to battle |
+| `loot.js` | Chests after every wave and quest: difficulty-rated tiers, rewards, materials, the chest-opening overlay |
+| `catalog.js` | Most of the 159-item shop catalog (built by items.js) |
+| `bounties.js` | Bounties tab: seeded daily, weekly and monthly bounties tracked from real usage; gold/buff rewards |
+| `guild.js` | Guild tab: recruit offers from finished agents, recruits, companion XP, active party merge |
+| `hd.js` | HD graphics: Kitty graphics protocol detection, image rendering with bloom, frame presenter |
+| `web/server.js` | Web view server (`arcade web`): localhost-only, token-protected API and SSE stream; runs the battle headless. Contract: `web/PROTOCOL.md` |
+| `web/client/` | Browser client: WebGL2 renderer (Canvas2D fallback), HTML/CSS tabs. `sync.js` bundles the sprite modules into `js/game.gen.js`; `mock.js` runs a scripted demo |
 | `celebrate.js` | LEVEL UP, VICTORY, LOOT and TROPHY banners composited over a finished frame |
 
 ## Hooks

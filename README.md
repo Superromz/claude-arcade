@@ -56,7 +56,7 @@ only on your computer. See [Web View](https://github.com/Superromz/claude-arcade
   then falls asleep. A board shows today's quests. While Claude works, a thought bubble shows what
   your hero is up to.
 - **Real progression.** XP from tools, finished tasks, monsters slain during real tasks, and your
-  actual token usage. LEVEL UP banners, 13 achievements, a daily streak, and stats per project.
+  actual token usage. LEVEL UP banners, 172 trophies (some secret), daily/weekly/monthly bounties, a daily streak, and stats per project.
 - **A Shop.** Spend gold on hats, capes, auras, pets and weapon glows, or on battle buffs. Never on
   XP.
 - **An animated status line.** A two-row HUD under Claude's prompt shows what your hero is doing,
@@ -106,7 +106,7 @@ command to your clipboard).
 | `space` | Basic attack |
 | Mouse click | Strike a monster, cast from the hotbar, or switch tabs |
 | `w` | Summon a practice wave (gold only, no XP) |
-| `tab` / `←` `→` | Switch tab: Adventure, Hero, Party, Trophies, Shop, Projects (or click a tab) |
+| `tab` / `←` `→` | Switch tab: Adventure, Campaign, Hero, Skills, Party, Guild, Bounties, Trophies, Shop, Projects (or click a tab) |
 | `h` | Hero roster (switch, create or delete heroes) |
 | `c` | Change your hero's look |
 | `t` | Next theme |
