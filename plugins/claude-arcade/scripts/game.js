@@ -352,7 +352,11 @@ function quit() {
   process.exit(0);
 }
 
-if (process.argv.includes('--hd-test')) {
+// `arcade web` / --web: run the browser view's server in the foreground instead.
+if (process.argv[2] === 'web' || process.argv.includes('--web')) {
+  const server = [require('path').join(__dirname, '..', 'web', 'server.js'), require('path').join(__dirname, '..', '..', '..', 'web', 'server.js')].find((f) => require('fs').existsSync(f));
+  if (server) require(server).main({ scriptsDir: __dirname }); else console.log('The web view is not installed. Run /claude-arcade:web in Claude Code first.');
+} else if (process.argv.includes('--hd-test')) {
   (async () => {
     const out = process.stdout;
     const det = HD.detect(process.env, L.loadConfig());

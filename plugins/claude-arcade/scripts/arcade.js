@@ -4,6 +4,7 @@
 //   arcade.js uninstall       restore the settings that setup replaced
 //   arcade.js theme <name>    switch theme (rpg | space | retro)
 //   arcade.js play            open the game pane (split pane where the terminal allows it)
+//   arcade.js web [stop]      open the game in the browser (starts a local server)
 //   arcade.js stats           print the hero sheet
 //   arcade.js toggle <toasts|ascii>
 //   arcade.js reset           wipe XP and achievements
@@ -29,6 +30,9 @@ function installScripts() {
   fs.mkdirSync(BIN, { recursive: true });
   // Everything except the hook and this CLI, which always run from the plugin dir.
   for (const f of fs.readdirSync(__dirname)) if (f.endsWith('.js') && !['hook.js', 'arcade.js'].includes(f)) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
+  // The web view goes next to bin/ (~/.claude/arcade/web); its server finds the scripts in ../bin.
+  const web = [path.join(__dirname, '..', 'web'), path.join(__dirname, '..', '..', '..', 'web')].find((d) => fs.existsSync(path.join(d, 'server.js')));
+  if (web) try { fs.cpSync(web, path.join(L.HOME, 'web'), { recursive: true, force: true }); } catch {}
 }
 
 // A short `arcade` command on PATH that starts the game pane. Windows: a .cmd
@@ -100,6 +104,37 @@ function play() {
   console.log(`Split the window with ${split}, then paste and run${copied ? ' (already copied to your clipboard)' : ''}:`);
   console.log(`  ${cmd}`);
 }
+
+// Open the web view: start its server in the background (or reuse a running
+// one) and open the browser. `web stop` shuts it down.
+function web(sub) {
+  const LOCK = path.join(L.HOME, 'web.lock');
+  const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+  const running = () => { const l = L.readJSON(LOCK, null); return l && l.pid && l.url && alive(l.pid) ? l : null; };
+  const cur = running();
+  if (sub === 'stop') {
+    if (!cur) return console.log('The web view is not running.');
+    const u = new URL(cur.url);
+    const req = require('http').request({ host: '127.0.0.1', port: u.port, method: 'POST', path: `/api/action?t=${u.searchParams.get('t')}`, headers: { 'Content-Type': 'application/json' } }, (res) => { res.resume(); console.log('Stopped the web view. The terminal game pane runs the battle again.'); });
+    req.on('error', () => { try { process.kill(cur.pid); } catch {} console.log('Stopped the web view.'); });
+    return req.end(JSON.stringify({ type: 'quit' }));
+  }
+  installScripts();
+  const server = path.join(L.HOME, 'web', 'server.js');
+  if (!fs.existsSync(server)) return console.log('The web view is not included in this version of Claude Arcade.');
+  if (cur) {
+    require(server).openBrowser(cur.url);
+    return console.log(`Claude Arcade is already open in your browser: ${cur.url}`);
+  }
+  const { spawn } = require('child_process');
+  spawn(process.execPath, [server], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
+  const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  let l = null;
+  for (let i = 0; i < 50 && !(l = running()); i++) sleep(100);
+  console.log(l ? `Claude Arcade is open in your browser: ${l.url}` : 'Starting the web view. It will open in your browser in a moment.');
+  console.log('The battle runs there now; stop it with /claude-arcade:web stop.');
+}
+
 function uninstall() {
   const settings = L.readJSON(SETTINGS, {});
   const backup = L.readJSON(BACKUP, {});
@@ -194,5 +229,5 @@ function reset() {
 }
 
 const [cmd, arg] = process.argv.slice(2);
-const commands = { setup: () => setup(arg), play, uninstall, theme: () => theme(arg), stats, toggle: () => toggle(arg), reset };
-(commands[cmd] || (() => console.log('Usage: arcade.js setup|play|uninstall|theme <name>|stats|toggle <toasts|ascii>|reset')))();
+const commands = { setup: () => setup(arg), play, web: () => web(arg), uninstall, theme: () => theme(arg), stats, toggle: () => toggle(arg), reset };
+(commands[cmd] || (() => console.log('Usage: arcade.js setup|play|web [stop]|uninstall|theme <name>|stats|toggle <toasts|ascii>|reset')))();
