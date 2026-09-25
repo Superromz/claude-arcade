@@ -233,7 +233,7 @@ function approvalDialog(lines, cols, rows, pal) {
   if (!req) return lines;
   const W = Math.min(cols - 4, 96), left = Math.floor((cols - W) / 2);
   const input = req.input || {};
-  const main = input.command || input.file_path || input.url || input.pattern || input.query || JSON.stringify(input);
+  const main = L.clean(input.command || input.file_path || input.url || input.pattern || input.query || JSON.stringify(input));
   const wrap = (text, w) => { const out = []; for (const para of String(text).split('\n')) { let s = para; do { out.push(s.slice(0, w)); s = s.slice(w); } while (s.length); } return out; };
   const body = wrap(main, W - 6).slice(0, Math.max(3, rows - 14));
   const more = wrap(main, W - 6).length - body.length;
@@ -286,6 +286,7 @@ function enterGame() {
   const g = L.loadState().game || {};
   Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, bosses: g.bosses || 0, bossTypes: { ...(g.bossTypes || {}) }, lastEventT: Date.now() });
   ui.xpPending = 0;
+  ui.lastLvl = undefined; ui.levelUp = null; // no false LEVEL UP when switching heroes
   ui.screen = 'game';
 }
 

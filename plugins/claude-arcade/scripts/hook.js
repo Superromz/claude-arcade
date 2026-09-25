@@ -23,7 +23,7 @@ function approvalInGame(input, cfg) {
   const id = `${Date.now().toString(36)}-${process.pid}`;
   const req = path.join(L.APPROVALS_DIR, `${id}.req.json`);
   const ans = path.join(L.APPROVALS_DIR, `${id}.answer.json`);
-  L.writeJSON(req, { id, sid: input.session_id, t: Date.now(), tool: input.tool_name, input: input.tool_input || {}, cwd: input.cwd || '' });
+  L.writeJSON(req, { id, pid: process.pid, sid: input.session_id, t: Date.now(), tool: input.tool_name, input: input.tool_input || {}, cwd: input.cwd || '' });
   const deadline = Date.now() + 90 * 1000;
   const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
   let answer = null;
@@ -160,9 +160,9 @@ function main() {
       }
       case 'SubagentStop': {
         const id = input.agent_id;
-        const member = ses.party[id] || ses.party[Object.keys(ses.party)[0]];
-        if (id && ses.party[id]) delete ses.party[id];
-        else delete ses.party[Object.keys(ses.party)[0]];
+        const member = id ? ses.party[id] : null;
+        if (!member) break; // unknown agent: nothing to remove, no XP
+        delete ses.party[id];
         gain(5);
         if (input.agent_transcript_path) addTokens(input.agent_transcript_path, `agent:${input.agent_id}`);
         if (member) log('return', `${member.icon} The ${member.name || member.cls} returns with news. +5 ${t.xpLabel}`);

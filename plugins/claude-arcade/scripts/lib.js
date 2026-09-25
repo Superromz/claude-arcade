@@ -21,7 +21,14 @@ function writeJSON(file, data) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-  fs.renameSync(tmp, file);
+  // On Windows the rename fails (EPERM/EBUSY) while another process is reading
+  // the file. Retry briefly instead of losing the write, and never leave tmp files.
+  for (let i = 0; ; i++) {
+    try { fs.renameSync(tmp, file); return; } catch (e) {
+      if (i >= 40 || !['EPERM', 'EBUSY', 'EACCES'].includes(e.code)) { try { fs.unlinkSync(tmp); } catch {} throw e; }
+      sleep(5 + i);
+    }
+  }
 }
 
 function readStdin() {
@@ -35,7 +42,7 @@ const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
 
 function withLock(fn) {
   fs.mkdirSync(HOME, { recursive: true });
-  const deadline = Date.now() + 1500;
+  const deadline = Date.now() + 4000; // stale locks (3s) are broken before this, so fn rarely runs unlocked
   for (;;) {
     try { fs.mkdirSync(LOCK_DIR); break; } catch {
       try { if (Date.now() - fs.statSync(LOCK_DIR).mtimeMs > 3000) fs.rmdirSync(LOCK_DIR); } catch {}
@@ -49,7 +56,12 @@ function withLock(fn) {
 // Append-only quest log the game pane tails. Trimmed when it grows.
 const EVENTS_FILE = path.join(HOME, 'events.jsonl');
 
+// Remove terminal control characters (ESC, BEL, BS, …) from text that came from
+// prompts or tools, so it can't move the cursor, hide text or set the clipboard.
+const clean = (s) => String(s == null ? '' : s).replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '').replace(/\t/g, ' ');
+
 function logEvent(ev) {
+  if (ev && ev.text != null) ev = { ...ev, text: clean(ev.text) };
   try {
     fs.mkdirSync(HOME, { recursive: true });
     fs.appendFileSync(EVENTS_FILE, JSON.stringify({ t: Date.now(), ...ev }) + '\n');
@@ -77,8 +89,13 @@ function gameAlive() {
 }
 function pendingApprovals() {
   try {
-    return fs.readdirSync(APPROVALS_DIR).filter((f) => f.endsWith('.req.json'))
-      .map((f) => readJSON(path.join(APPROVALS_DIR, f), null)).filter(Boolean).sort((a, b) => a.t - b.t);
+    const alive = (pid) => { if (!pid) return true; try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+    return fs.readdirSync(APPROVALS_DIR).filter((f) => f.endsWith('.req.json')).map((f) => {
+      const file = path.join(APPROVALS_DIR, f), req = readJSON(file, null);
+      // The hook waits at most 90s; older requests, or ones whose hook died, are stale.
+      if (!req || Date.now() - req.t > 95 * 1000 || !alive(req.pid)) { try { fs.unlinkSync(file); } catch {} return null; }
+      return req;
+    }).filter(Boolean).sort((a, b) => a.t - b.t);
   } catch { return []; }
 }
 function answerApproval(id, behavior) {
@@ -242,10 +259,16 @@ const paint = (color, s) => `${c[color] || ''}${s}${c.reset}`;
 // Approximate terminal cell width: wide emoji count 2, joiners/selectors 0.
 function visWidth(s) {
   let w = 0;
-  for (const ch of String(s).replace(/\x1b\[[0-9;]*m/g, '')) {
-    const cp = ch.codePointAt(0);
-    if (cp === 0xfe0f || cp === 0x200d || (cp >= 0x300 && cp < 0x370)) continue;
-    w += cp >= 0x1f000 || (cp >= 0x2600 && cp < 0x27c0 && /\p{Extended_Pictographic}/u.test(ch)) || (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) ? 2 : 1;
+  const chars = [...String(s).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '')];
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i], cp = ch.codePointAt(0);
+    if (cp === 0xfe0f || cp === 0xfe0e || cp === 0x200d || (cp >= 0x300 && cp < 0x370) || (cp >= 0x1f3fb && cp <= 0x1f3ff)) continue;
+    // Terminals draw text-style symbols (⚔ 🛡 ❤ ☠ …) one cell wide unless they
+    // default to emoji presentation or carry an emoji variation selector.
+    const wide = /\p{Emoji_Presentation}/u.test(ch) || (chars[i + 1] === '\uFE0F' && /\p{Extended_Pictographic}/u.test(ch)) ||
+      (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) || (cp >= 0xac00 && cp <= 0xd7a3) ||
+      (cp >= 0xf900 && cp <= 0xfaff) || (cp >= 0xff01 && cp <= 0xff60) || (cp >= 0xffe0 && cp <= 0xffe6) || (cp >= 0x20000 && cp <= 0x3fffd);
+    w += wide ? 2 : 1;
   }
   return w;
 }
@@ -414,6 +437,9 @@ function modeForTool(name = '') {
 const TOOL_XP = { editing: 5, running: 3, reading: 1, searching: 1, web: 2, summoning: 10, planning: 4, thinking: 1 };
 
 function describeTool(name, input = {}) {
+  return clean(describeToolRaw(name, input));
+}
+function describeToolRaw(name, input = {}) {
   const trim = (s, n = 38) => (s = String(s || '').replace(/\s+/g, ' ').trim()).length > n ? s.slice(0, n - 1) + '…' : s;
   const file = (p) => path.basename(String(p || ''));
   switch (name) {
@@ -691,7 +717,7 @@ function unlock(state, ses) {
 }
 
 module.exports = {
-  HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, APPROVALS_DIR, HEARTBEAT, gameAlive, pendingApprovals, answerApproval, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
+  clean, HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, APPROVALS_DIR, HEARTBEAT, gameAlive, pendingApprovals, answerApproval, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
   readJSON, writeJSON, readStdin, loadState, saveState, loadConfig, saveConfig,
   switchHero, createHero, deleteHero, heroList, HERO_FIELDS,
   session, pruneSessions, project, projectRoot, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,
