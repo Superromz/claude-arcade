@@ -1,6 +1,6 @@
 {
   "name": "claude-arcade",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "description": "A Claude Code plugin that turns the terminal UI into a game.",
   "scripts": {

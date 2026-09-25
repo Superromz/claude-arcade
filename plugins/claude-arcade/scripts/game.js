@@ -21,6 +21,10 @@ const { drawScene, sceneLines } = require('./scene');
 const { truncVis, panelLine, gradBar, barPart, ICONS, eventColor, collapse, stripIcon, questLog, fmtNum, heroCard, partyList, partyTab, trophiesTab, heroTab, hotbar, header, footer } = require('./panels');
 const { FIELDS, FIELD_LABEL, OPTIONS, openCreator, creatorFrame, creatorKey } = require('./creator');
 const { openRoster, rosterFrame, rosterKey } = require('./roster');
+const { shopTab, shopKey } = require('./shop');
+const { projectsTab } = require('./projects');
+const { applyOverlay } = require('./celebrate');
+const { sectionHeader } = require('./panels');
 
 // ---------- frame ----------
 
@@ -40,27 +44,30 @@ function frame(cols, rows) {
       const scene = sceneLines(sceneW, bodyH, d, pal);
       ui.layout = { top, cols: sceneW, rows: bodyH };
       const side = [...heroCard(d, pal, SIDE), ...partyList(d, pal, SIDE)];
-      side.push(panelLine(SIDE, pal.panel2, [[' QUEST LOG', pal.accent, true]]));
+      side.push(sectionHeader(SIDE, pal, 'QUEST LOG'));
       side.push(...questLog(d, pal, SIDE, Math.max(0, bodyH - side.length), true));
       for (let i = 0; i < bodyH; i++) out.push(scene[i] + (side[i] || panelLine(SIDE, pal.panel, [])));
     } else {
       const sceneH = Math.max(8, Math.min(40, Math.floor(bodyH * 0.62)));
       out.push(...sceneLines(W, sceneH, d, pal));
       ui.layout = { top, cols: W, rows: sceneH };
-      out.push(panelLine(W, pal.panel2, [['  QUEST LOG', pal.accent, true]], [[`wave ${ui.battle.wave} · ${ui.battle.kills} slain `, pal.dim]]));
+      out.push(sectionHeader(W, pal, 'QUEST LOG', [[`wave ${ui.battle.wave} · ${ui.battle.kills} slain`, pal.dim]]));
       out.push(...questLog(d, pal, W, bodyH - sceneH - 1));
     }
   } else {
     ui.layout = null;
-    const body = [heroTab, partyTab, trophiesTab][ui.tab - 1](d, pal, W, bodyH).slice(0, bodyH);
+    const body = [heroTab, partyTab, trophiesTab, shopTab, projectsTab][ui.tab - 1](d, pal, W, bodyH).slice(0, bodyH);
     while (body.length < bodyH) body.push(panelLine(W, pal.panel, []));
     out.push(...body);
   }
   const sess = d.sid ? `${ui.pin ? 'pinned' : 'following'} ${d.sid.slice(0, 8)}` : 'no session';
   out.push(hotbar(d, pal, W));
   ui.hotbarRow = out.length;
-  out.push(footer(pal, W, [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']]));
-  return out;
+  const keys = TABS[ui.tab] === 'Shop'
+    ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']];
+  out.push(footer(pal, W, keys));
+  return applyOverlay(out, d, pal, W, rows);
 }
 
 // ---------- main loop ----------
@@ -83,6 +90,7 @@ function onKey(key) {
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (key === 'q' || key === '\x1b') return quit();
+  if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
   if (/^[1-6]$/.test(key)) playerCast(d, Number(key) - 1);
   if (key === ' ') playerCast(d, 0);
   if (key === 'w' && !aliveMonsters().length) { ui.battle.practice = true; spawnWave(ui.sceneW || 200, Math.floor(ui.heroY + 24), d.lvl); }
@@ -118,7 +126,7 @@ function onMouse(seq, d) {
     if (target && (ui.cooldowns.click || 0) <= ui.tick) {
       ui.cooldowns.click = ui.tick + 3;
       const stat = d.stats[C.CLASSES[d.hero.cls].stat] || 10;
-      hitMonster(target, Math.max(1, Math.round(C.damage(C.SPELLS[0], d.lvl, stat) * 0.8)), [255, 255, 255]);
+      hitMonster(target, Math.max(1, Math.round(C.damage(C.SPELLS[0], d.lvl, stat) * 0.8 * require('./items').damageMultiplier())), [255, 255, 255]);
       emit(6, px, py, [[255, 255, 255], [255, 220, 120]], { spread: 1.2, up: 1.5 });
     } else if (!target) emit(3, px, py, [[200, 200, 220]], { spread: 0.6, up: 0.8, life: 8 });
   }
@@ -240,7 +248,7 @@ if (process.argv.includes('--snapshot')) {
   const cols = Number(process.env.COLUMNS) || 100, rows = Number(process.env.LINES) || 28;
   if (arg === 'create') openCreator(snapshotData());
   else if (arg === 'roster') openRoster();
-  else if (Number(arg) >= 1 && Number(arg) <= 4) ui.tab = Number(arg) - 1;
+  else if (Number(arg) >= 1 && Number(arg) <= TABS.length) ui.tab = Number(arg) - 1;
   ui.battle.lastEventT = 0; // replay recent events as spells
   const g = L.loadState().game || {};
   ui.battle.gold = g.gold || 0; ui.battle.kills = g.kills || 0;

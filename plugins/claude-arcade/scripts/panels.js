@@ -312,7 +312,7 @@ function partyList(d, pal, W) {
   party.forEach((p, i) => {
     const cc = classColors(p.cls, pal).H;
     const spin = '◐◓◑◒'[((ui.tick >> 1) + i) % 4];
-    out.push(cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [`${Math.round((Date.now() - p.since) / 1000)}s`, pal.dim]]));
+    out.push(cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [p.since ? `${Math.round((Date.now() - p.since) / 1000)}s` : '', pal.dim]]));
   });
   out.push(cardBottom(W, pal));
   return out;
@@ -329,7 +329,7 @@ function partyTab(d, pal, W, h) {
     party.slice(0, Math.floor((W - 4) / 16)).forEach((p, i) => {
       const colors = classColors(p.cls);
       pc.glow(8 + i * 16, 10, 10, colors.H, 0.3);
-      SP.drawCompanion(pc, colors, 3 + i * 16, 3 + ((ui.tick + i * 3) >> 2 & 1), { t: ui.tick + i });
+      SP.drawCompanion(pc, p, 3 + i * 16, 3 + ((ui.tick + i * 3) >> 2 & 1), { t: ui.tick + i, id: p.name || i });
       pc.label(2 + i * 16, 8, cap(p.cls).slice(0, 12), pal.text, true);
     });
     out.push(...pc.lines());

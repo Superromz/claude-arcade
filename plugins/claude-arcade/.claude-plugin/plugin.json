@@ -1,6 +1,6 @@
 {
   "name": "claude-arcade",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Turn Claude Code into a game: animated HUD while Claude thinks and works, XP and levels, achievements, and subagents as party members.",
   "author": { "name": "Superromz" },
   "keywords": ["gamification", "statusline", "fun", "hud", "hooks"]

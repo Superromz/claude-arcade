@@ -138,6 +138,7 @@ function kill(m) {
   const [mw, mh] = size(m);
   let value = m.boss ? 40 + m.lvl * 2 : (m.elite ? 5 : 0) + 1 + (m.max >> 3);
   if (b.combo >= 3) value += b.combo - 2;
+    value = Math.round(value * require('./items').goldMultiplier());
   for (let i = 0; i < Math.min(8, value); i++) b.coins.push({ x: m.x + mw / 2, y: m.y, vx: (Math.random() - 0.5) * 2, vy: -1.5 - Math.random() * 1.5, v: i === 0 ? value - Math.min(8, value) + 1 : 1, age: 0 });
   if (!b.practice) { ui.xpPending = (ui.xpPending || 0) + m.xp; if (!m.boss) b.waveXp = (b.waveXp || 0) + m.xp; }
   floater(m.x + mw / 2 - 3, m.y - 12, b.practice ? `+${value}◉` : `+${m.xp} XP`, [255, 214, 80], true);
@@ -211,7 +212,7 @@ function cast(d, mode, origin, pal, forced, boost = 1) {
   if (!targets.length) return;
   const spell = forced || C.spellFor(d.lvl, mode, ui.tick + ui.battle.kills);
   const stat = d.stats[(C.CLASSES[d.hero.cls] || C.CLASSES.mage).stat] || 10;
-  const dmg = Math.round(C.damage(spell, d.lvl, stat) * boost * (inspired(d) ? 1.2 : 1));
+  const dmg = Math.round(C.damage(spell, d.lvl, stat) * boost * (inspired(d) ? 1.2 : 1) * require('./items').damageMultiplier());
   // Tell the hero animation what was just cast.
   ui.heroAction = { kind: spell.id === 'basic' ? 'swing' : 'cast', spell: spell.id, t: ui.tick };
   const target = targets[0];
@@ -363,6 +364,7 @@ function stepBattle(d, pc, floorY, heroX, origin, pal, mode) {
   }
 
   // Waves: spawn while busy, wipe out on victory, retreat when idle.
+  if (b.wave && b.buffWave !== b.wave && !b.monsters.some((m) => m.hp > 0)) { b.buffWave = b.wave; require('./items').consumeWave(); }
   if (b.wave && !b.monsters.some((m) => m.hp > 0) && b.waveXp) {
     L.logEvent({ sid: d.sid, kind: 'combo', text: `Wave ${b.wave} cleared! +${b.waveXp} XP` });
     b.waveXp = 0;

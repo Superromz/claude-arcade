@@ -63,7 +63,7 @@ function card(h, selected, pal, height) {
     panelLine(w - 2, panel, [[` ${cls.icon || ''} ${cls.name}`, pal.magic]], [[`${ago(h.lastPlayed)} `, pal.dim]]),
     `${bg(panel)} ${barPart((h.xp - lo) / Math.max(1, hi - lo), w - 4, pal.accent, pal.gold, pal, panel)} ${RESET}`,
     panelLine(w - 2, panel, [[` ★ ${h.quests} quests`, pal.text], [`   ✦ ${h.achievements} trophies`, pal.dim]]),
-    panelLine(w - 2, panel, [[` ◉ ${h.gold} gold`, pal.gold], [`   ⚔ ${h.kills} slain`, pal.dim]]),
+    panelLine(w - 2, panel, [[` ◉ ${h.gold} gold`, pal.gold], [`   × ${h.kills} slain`, pal.dim]]),
   ];
   for (const l of lines) out.push(row(l));
   while (out.length < height - 1) out.push(row(panelLine(w - 2, panel, [])));
