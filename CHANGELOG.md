@@ -6,6 +6,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+### Added
+- Monthly bounties, 70+ new daily and weekly bounties, and 110 new trophies (168 in all) for chests, crafting, every boss and biome, the skill tree, the guild, every class, plus secret ones.
+
 ### Changed
 - Sharper text-mode graphics: the battle scene uses the finest pixel the terminal can draw (half a character) instead of zooming in on big panes, and very large panes zoom with a smoothing filter instead of blocky pixels.
 

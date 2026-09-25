@@ -28,7 +28,7 @@ runs in the CLI, next to Claude, so it's something to play (or just watch) while
 | [Companions](Companions) | How Claude's agents join your party and fight |
 | [HD Graphics](HD-Graphics) | Sharper, glowing image graphics in Warp, kitty, WezTerm and Ghostty |
 | [Skill Tree](Skill-Tree) | Class skill kits, three branches with capstones, respec and paragon |
-| [Bounties](Bounties) | Daily and weekly challenges that pay gold for real Claude work |
+| [Bounties](Bounties) | Daily, weekly and monthly challenges that pay gold for real Claude work |
 | [Guild](Guild) | Recruit finished agents as permanent, leveling companions |
 | [Progression and XP](Progression-and-XP) | Where XP comes from, levels, HP, combos, stats and achievements |
 | [Biomes and Themes](Biomes-and-Themes) | Dungeon, forest, lava cave, castle, and the three themes |
