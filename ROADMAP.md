@@ -9,6 +9,8 @@
 - [ ] Integrate the above, Shop tab, Projects view, full test + visual pass, release
 
 ## Next
+
+0. **UI polish pass** (after the current agents land): group repeated quest-log lines and wrap long ones; let the quest log fill the empty sidebar space; group or iconify the 9 tabs; tighter battle camera with the hero further in and a thinner ground band; stronger contrast and outlines on thought bubbles and damage numbers; clearer XP/HP bars with labels.
 1. ✅ **Class skill kits.** Each class gets its own five skills, triggered by what Claude does and
    unlocked at Lv 3/5/8/12/18 (Knight: Shield Bash, Taunt, Whirlwind, Holy Strike, Judgment, and so on).
 2. ✅ **Skill tree.** 3 branches per class with capstones; 1 point per level + 1 per boss.
