@@ -39,7 +39,7 @@ it.
 | `c` | Change your hero's look in the character creator |
 | `t` | Cycle the theme |
 | `p` | Pin a different Claude session, cycling through recent ones, then back to following the latest |
-| `q`, `Esc`, `Ctrl+C` | Quit (gold and kills are saved) |
+| `q` / `Esc` | Quit. It asks first: `Y` or Enter quits, any other key stays. `Ctrl+C` quits right away |
 
 ### Tabs
 

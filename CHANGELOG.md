@@ -6,6 +6,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+### Changed
+- Pressing `q` or `Esc` asks "Leave the game?" before quitting. `Ctrl+C` still quits right away.
+
 ## [0.6.0] - 2026-09-25
 
 ### Added
