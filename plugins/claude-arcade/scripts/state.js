@@ -59,7 +59,10 @@ function currentMode(ses) {
   let mode = ses.mode || 'idle';
   if (mode === 'victory' && age > 8) mode = 'idle';
   if (mode === 'hurt' && age > 3) mode = 'thinking';
-  if (!['idle', 'victory', 'waiting'].includes(mode) && age > 1800) mode = 'idle';
+  // Nobody answered for a while, or Claude went quiet mid-task (e.g. Esc): back to camp.
+  // Long commands (tests, builds) run without hook events, so 'running' gets longer.
+  if (mode === 'waiting' && age > 600) mode = 'idle';
+  if (!['idle', 'victory', 'waiting'].includes(mode) && age > (mode === 'running' ? 1800 : 300)) mode = 'idle';
   return mode;
 }
 

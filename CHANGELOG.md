@@ -6,6 +6,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+### Fixed
+- Between tasks the hero now goes to rest at the campfire. Claude Code's "waiting for your input" notice no longer leaves them standing around, and a task that went quiet (e.g. after Esc) ends at camp after 5 minutes.
+
 ## [0.7.0] - 2026-09-25
 
 ### Added

@@ -205,6 +205,18 @@ test('permission requests can be answered from the game pane', async () => {
   assert.deepStrictEqual(fs.readdirSync(path.join(arcade, 'approvals')), []); // cleaned up
 });
 
+test('idle notifications send the hero to camp; permission prompts wait', () => {
+  hook('UserPromptSubmit', { session_id: 'n1', prompt: 'do a thing' });
+  hook('Notification', { session_id: 'n1', notification_type: 'idle_prompt', message: 'Claude is waiting for your input' });
+  assert.strictEqual(state().sessions.n1.mode, 'idle');
+  hook('Notification', { session_id: 'n1', notification_type: 'permission_prompt', message: 'Claude needs your permission to use Bash' });
+  assert.strictEqual(state().sessions.n1.mode, 'waiting');
+  const { currentMode } = require(path.join(SCRIPTS, 'state.js'));
+  assert.strictEqual(currentMode({ mode: 'waiting', since: Date.now() - 11 * 60 * 1000 }), 'idle');
+  assert.strictEqual(currentMode({ mode: 'thinking', since: Date.now() - 6 * 60 * 1000 }), 'idle');
+  assert.strictEqual(currentMode({ mode: 'running', since: Date.now() - 6 * 60 * 1000 }), 'running');
+});
+
 test('setup and uninstall round-trip user settings', () => {
   const settingsFile = path.join(home, '.claude', 'settings.json');
   fs.writeFileSync(settingsFile, JSON.stringify({ model: 'opus', statusLine: { type: 'command', command: 'mine' } }));

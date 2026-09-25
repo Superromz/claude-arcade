@@ -184,10 +184,16 @@ function main() {
         }
         break;
       }
-      case 'Notification':
-        set('waiting', input.message ? String(input.message).slice(0, 40) : '');
-        log('waiting', `🔔 ${input.message || 'Your hero awaits orders'}`);
+      case 'Notification': {
+        // "Claude is waiting for your input" just means Claude is done: go rest at
+        // camp. Only real prompts (permissions, questions) mean the hero waits on you.
+        const msg = String(input.message || '');
+        const idle = input.notification_type === 'idle_prompt' || /waiting for your input/i.test(msg);
+        if (idle) { if (!['idle', 'victory'].includes(ses.mode)) set('idle'); break; }
+        set('waiting', msg.slice(0, 40));
+        log('waiting', `🔔 ${msg || 'Your hero awaits orders'}`);
         break;
+      }
       case 'PreCompact':
         set('planning', 'compacting memories');
         log('compact', '🌙 The hero rests and consolidates memories…');
