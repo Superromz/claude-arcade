@@ -17,7 +17,13 @@ class PixelCanvas {
     this.px = Array.from({ length: this.w * this.h }, () => bg);
     this.text = new Map(); // "col,row" -> [char, fg]
   }
-  set(x, y, c) { x |= 0; y |= 0; if (c && x >= 0 && y >= 0 && x < this.w && y < this.h) this.px[y * this.w + x] = c; }
+  set(x, y, c) {
+    x |= 0; y |= 0;
+    if (c && x >= 0 && y >= 0 && x < this.w && y < this.h) { const i = y * this.w + x; this.px[i] = c; if (this.fgMask) this.fgMask[i] = 1; }
+  }
+  // HD renderer: after the backdrop is drawn, remember which pixels sprites,
+  // particles and props set; the upscaler smooths only their stair-step edges.
+  beginForeground() { if (this.trackFg) this.fgMask = new Uint8Array(this.w * this.h); }
   get(x, y) { return this.px[(y | 0) * this.w + (x | 0)]; }
   rect(x, y, w, h, c) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) this.set(x + i, y + j, c); }
   // Additive light: brighten pixels around (cx, cy) toward color.

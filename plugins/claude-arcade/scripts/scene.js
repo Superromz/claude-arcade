@@ -7,7 +7,14 @@ const C = require('./character');
 const SP = require('./sprites');
 const { ui, currentMode, isBusy, biomeFor } = require('./state');
 const { emit, aliveMonsters, stepBattle, drawShots, drawBattleOverlay } = require('./battle');
-const { drawBackground } = require('./backgrounds');
+const BG = require('./backgrounds');
+const HD = require('./hd');
+
+// Everything drawn after the backdrop counts as foreground for the HD renderer.
+function drawBackground(pc, ...args) {
+  BG.drawBackground(pc, ...args);
+  if (pc.beginForeground) pc.beginForeground();
+}
 
 const REST_STEP = 6; // the party rests this far behind its battle spot and marches in
 const SIT_AFTER = 30, SLEEP_AFTER = 180; // idle seconds before sitting down / dozing off
@@ -170,7 +177,7 @@ function dot(pc, x, y, big) {
   for (const [a, b] of cells) pc.set(x + a, y + b, PAPER);
 }
 
-const textW = (s) => Math.ceil([...s].length / (ui.sceneScale || 1));
+const textW = (s) => Math.ceil([...s].length / (ui.textScale || ui.sceneScale || 1));
 
 function drawBubble(pc, b, hx, heroY) {
   const n = textW(b.text), W = pc.w;
@@ -351,10 +358,11 @@ function drawScene(pc, d, pal) {
 
 // Render at a logical resolution sized so the hero is ~40% of the scene height.
 function sceneLines(cols, rows, d, pal) {
+  if (HD.state.on) return sceneLinesHD(cols, rows, d, pal);
   const S = Math.max(1, Math.min(4, Math.round((rows * 2) / 62)));
   const lc = Math.ceil(cols / S), lr = Math.ceil(rows / S);
   const small = new X.PixelCanvas(lc, lr);
-  ui.sceneScale = S;
+  ui.sceneScale = S; ui.textScale = null;
   drawScene(small, d, pal);
   let lines;
   if (S === 1) lines = small.lines();
@@ -375,6 +383,35 @@ function sceneLines(cols, rows, d, pal) {
   }
   if (ui.battle.shake > 0) { ui.battle.shake--; if (ui.battle.shake % 2) lines = lines.slice(1).concat(lines[0]); }
   return lines;
+}
+
+// HD: draw the scene at a finer logical resolution and hand an RGBA frame to
+// game.js (ui.hdFrame), which places it over these blank rows as a Kitty image.
+// Rows stay exactly `cols` wide so the text layout is unchanged.
+function sceneLinesHD(cols, rows, d, pal) {
+  const { cw, ch } = HD.state;
+  const devW = cols * cw, devH = rows * ch;
+  const p = HD.pitchFor(devH);
+  const lw = Math.ceil(devW / p), lr = Math.ceil(devH / p / 2);
+  const pc = new X.PixelCanvas(lw, lr);
+  pc.trackFg = true;
+  const adv = 6 * HD.fontScale(ch); // label glyph advance in device px
+  ui.sceneScale = p / cw; // game px per text cell (mouse mapping)
+  ui.textScale = p / adv; // game px per label character
+  drawScene(pc, d, pal);
+  let shake = 0;
+  if (ui.battle.shake > 0) { ui.battle.shake--; if (ui.battle.shake % 2) shake = Math.round(ch / 2); }
+  ui.hdFrame = null;
+  if (HD.state.render !== false) {
+    const t0 = Date.now();
+    // Under load render at a coarser pitch; the terminal stretches it to the cell rect.
+    const q = HD.state.quality || 1, po = Math.max(1, Math.round(p * q)), k = po / p;
+    const img = HD.renderScene(pc, { pitch: po, outW: Math.round(devW * k), outH: Math.round(devH * k), adv: Math.max(4, Math.round(adv * k)), shakeY: Math.round(shake * k) });
+    ui.hdFrame = { ...img, cols, rows, cost: Date.now() - t0 };
+  }
+  const blank = `\x1b[48;2;${pal.panel.join(';')}m${' '.repeat(cols)}\x1b[0m`;
+  ui.hdBlank = blank;
+  return Array.from({ length: rows }, () => blank);
 }
 
 module.exports = { drawScene, sceneLines };
