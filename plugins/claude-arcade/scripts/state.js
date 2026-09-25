@@ -6,6 +6,7 @@ const M = require('./messages');
 const X = require('./pixel');
 const C = require('./character');
 const SP = require('./sprites');
+const G = require('./guild');
 
 
 const ESC = '\x1b[';
@@ -41,7 +42,11 @@ function snapshotData() {
   const state = L.loadState();
   const sessions = Object.entries(state.sessions).sort((a, b) => (b[1].since || 0) - (a[1].since || 0));
   const sid = ui.pin && state.sessions[ui.pin] ? ui.pin : sessions[0] && sessions[0][0];
-  const ses = (sid && state.sessions[sid]) || { mode: 'idle', since: Date.now(), hp: 100, combo: 0, party: {} };
+  let ses = (sid && state.sessions[sid]) || { mode: 'idle', since: Date.now(), hp: 100, combo: 0, party: {} };
+  // Active guild recruits fight beside the hero as permanent party members.
+  // They only live in this snapshot, never in state.json.
+  const recruits = G.partyEntries(state, cfg);
+  if (Object.keys(recruits).length) ses = { ...ses, party: { ...(ses.party || {}), ...recruits } };
   const events = L.readEvents(150).filter((e) => !sid || !e.sid || e.sid === sid);
   const hero = C.getCharacter(cfg) || C.defaultCharacter();
   const lvl = L.levelFor(state.xp);

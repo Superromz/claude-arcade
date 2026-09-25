@@ -15,6 +15,7 @@ const X = require('./pixel');
 
 const shiftRows = (rows, from, to, n) => rows.map((r, i) => (i >= from && i <= to ? ('.'.repeat(n) + r).slice(0, r.length) : r));
 const withRows = (rows, edits) => rows.map((r, i) => (edits[i] !== undefined ? edits[i] : r));
+const frameSize = (rows) => [rows.reduce((a, r) => Math.max(a, r.length), 0), rows.length];
 
 // ----- dungeon -----
 const SLIME = [
@@ -224,6 +225,318 @@ const LICH_A = [
 const LICH = [LICH_A, withRows(LICH_A, { 0: '.Y.Y.Y......PPP.', 1: '.YYYYY.....PCCCP', 2: '.KKKKKK......PPP', 13: '.KGGGGGGgggK.b..', 14: 'KGGGGGGGgggggKb.', 15: '.KKKKKKKKKKKKKb.' })];
 const LICH_ATK = withRows(LICH_A, { 0: '.Y.Y.Y.....PPP..', 1: '.YYYYY....PCCCP.', 2: '.KKKKKK...PCCCP.', 3: 'KWWWWWgK...PPPb.' });
 
+// ----- more regulars (two per biome) -----
+// Rows are padded to the widest row so flipped sprites stay aligned.
+const norm = (rows) => { const w = frameSize(rows)[0]; return rows.map((r) => r.padEnd(w, '.')); };
+
+const RAT_A = norm([
+  '..KK.............',
+  '.KhhK..KKKKKK....',
+  'KhGGKKKhhhhGGK...',
+  'KGRGGGhGGGGGGgK..',
+  'WGGGGGGGGGGGGGgK.',
+  '.KKGGGGGGGGGGggKK',
+  '..KKgggggggggKKdK',
+  '...KgK.KgK.KgK.dK',
+  '...KK..KK..KK...K',
+]);
+const RAT = [RAT_A, withRows(RAT_A, { 7: '..KgK..KgK..KgKdK', 8: '..KK...KK...KK..K' })];
+const RAT_ATK = withRows(RAT_A, { 4: 'W.KGGGGGGGGGGGgK.', 5: 'WKKGGGGGGGGGGggKK' });
+
+const MIMIC_A = norm([
+  '..............',
+  '.KKKKKKKKKKKK.',
+  'KhGGGGGGGGGGgK',
+  'KhGGGGYYGGGGgK',
+  'KMMMMMYYMMMMmK',
+  'KdEdddddddEddK',
+  'KMMMMMMMMMMMmK',
+  'KGGGGGGGGGGGgK',
+  'KGGGGKYYKGGGgK',
+  'KgGGGGGGGGGggK',
+  'KMMMMMMMMMMMmK',
+  '.KKKKKKKKKKKK.',
+]);
+const MIMIC_B = norm([
+  '.KKKKKKKKKKKK.',
+  'KhGGGGGGGGGGgK',
+  'KMMMMMYYMMMMmK',
+  'KWdWdWdWdWdWdK',
+  'KdEdddddddEddK',
+  'KddrrrrrrrdddK',
+  'KdWdWdWdWdWdWK',
+  'KMMMMMMMMMMMmK',
+  'KGGGGKYYKGGGgK',
+  'KgGGGGGGGGGggK',
+  'KMMMMMMMMMMMmK',
+  '.KKKKKKKKKKKK.',
+]);
+const MIMIC = [MIMIC_A, MIMIC_A, MIMIC_B, MIMIC_A];
+const MIMIC_ATK = withRows(MIMIC_B, { 5: 'rrrrrrrrrrdddK', 6: 'KrWdWdWdWdWdWK' });
+
+const SPIDER_A = norm([
+  '.......KKK.......',
+  '.....KKhGgKK.....',
+  '..K.KhGYGYGgK.K..',
+  '.K.KKGhGYGGgKK.K.',
+  'K.K.KGGGGGGgK.K.K',
+  'K.KKRGRGGRGRgKK.K',
+  '.K..KGGGGGGgK..K.',
+  '.K.K.KKWKWKK.K.K.',
+  'K..K.........K..K',
+]);
+const SPIDER = [SPIDER_A, withRows(SPIDER_A, { 4: '.KK.KGGGGGGgK.KK.', 7: '..KK.KKWKWKK.KK..', 8: '.K..K.......K..K.' })];
+const SPIDER_ATK = withRows(SPIDER_A, { 6: '.K..KGGWGWGgK..K.', 7: '.K.K.KKWKWKK.K.K.', 8: 'K..K..W...W..K..K' });
+
+const BOAR_A = norm([
+  '.......KKKKKKK....',
+  '..K.KKdddddddKK...',
+  '.KhKhGdhhhhhhGgK..',
+  'KhGGGGGGGGGGGGGgK.',
+  'KGRGGGhGGGGGGGGggK',
+  'KGGGGGGGGGGGGGGggK',
+  'WWKGGGGGGGGGGGgggK',
+  'KWKKgGGgggggGggdK.',
+  '.K.KgGK.KggKKgK...',
+  '...KgK...KgK.KgK..',
+  '...KK....KK..KK...',
+]);
+const BOAR = [BOAR_A, withRows(BOAR_A, { 8: '.K.KgK..KgK..KgK..', 9: '..KgK..KgK..KgK...', 10: '..KK...KK...KK....' })];
+const BOAR_ATK = withRows(BOAR_A, { 3: 'KhGGGGGGGGGGGGGgK.', 4: 'KGRGGGhGGGGGGGGggK', 5: 'WGGGGGGGGGGGGGGggK', 6: 'WWKGGGGGGGGGGGgggK', 7: 'WWKKgGGgggggGggdK.' });
+
+const SALA_A = norm([
+  '.KKKK....F.F.F....',
+  'KhGGhK..KOKOKOK...',
+  'KGEGGGKKhhhhhhGK..',
+  'KGGGGGGGGOGGGOGgK.',
+  'KrrGGGGGGGGGGGGggK',
+  '.KKKgGGgggggGGgggK',
+  '..KgK.KgK..KgKKKgK',
+  '..KK..KK...KK..KK.',
+]);
+const SALA = [SALA_A, withRows(SALA_A, { 0: '.KKKK...F.F.F.....', 1: 'KhGGhK..KFKFKFK...', 6: '.KgK..KgK..KgK.KgK', 7: '.KK...KK...KK..KK.' })];
+const SALA_ATK = withRows(SALA_A, { 3: 'KGGGGGGGGOGGGOGgK.', 4: 'OFrrGGGGGGGGGGGggK', 5: 'FOKKgGGgggggGGgggK' });
+
+const WISP_A = norm([
+  '.....h......',
+  '....hG..h...',
+  '..h.GGh.G...',
+  '...GGhhGG.h.',
+  '..GGhWWhGG..',
+  '.gGhWKWKhGg.',
+  '.gGhWWWWhGg.',
+  '.ggGhhhhGgg.',
+  '..dgGGGGgd..',
+  '...dggggd...',
+  '....dgd.....',
+  '.....d......',
+]);
+const WISP = [WISP_A, withRows(WISP_A, { 0: '......h.....', 1: '..h..Gh.....', 2: '...hGG..hG..', 3: '..GGhhGGG...', 10: '.....dgd....', 11: '......d.....' })];
+
+const CULTIST_A = norm([
+  '....KKKK....',
+  '...KhGGgK...',
+  '..KhGGGGgK..',
+  '..KGKKKKgK..',
+  '..KGKEEKgK..',
+  '..KGKKKKgK..',
+  '.KhGGGGGggK.',
+  'KPKhGGGGGgK.',
+  'PCPKGGYGGgK.',
+  'KPKGGGYGGggK',
+  '.K.KGGGGGggK',
+  '...KGGGGgggK',
+  '..KGGGGGggdK',
+  '..KgGGGggddK',
+  '..KKKKKKKKKK',
+]);
+const CULTIST = [CULTIST_A, withRows(CULTIST_A, { 7: 'KCKhGGGGGgK.', 8: 'CPCKGGYGGgK.', 9: 'KCKGGGYGGggK', 12: '.KGGGGGGggdK', 13: '.KgGGGGggddK', 14: '.KKKKKKKKKKK' })];
+const CULTIST_ATK = withRows(CULTIST_A, { 3: 'KPKGKKKKgK..', 4: 'PCPGKEEKgK..', 5: 'KPKGKKKKgK..', 6: '.KhGGGGGggK.', 7: '.KKhGGGGGgK.', 8: '..KKGGYGGgK.', 9: '..KGGGYGGggK' });
+
+const ARMOR_A = norm([
+  '....KKKKK...W',
+  '...KhGGGgK.WM',
+  '...KGKKKgK.WM',
+  '...KGCKCgK.MW',
+  '...KGKKKgK.bK',
+  '..KKKGGgKKKbK',
+  '.KhGKhGGgKGbK',
+  'KhGGKGGGgKGb.',
+  'KGgKKGGGgKKb.',
+  '.KK.KdddgK.b.',
+  '....KGGKgK.b.',
+  '...KGGK.KgK..',
+  '...KGK..KgK..',
+  '..KGGK..KggK.',
+  '..KKKK..KKKK.',
+]);
+const ARMOR = [ARMOR_A, withRows(ARMOR_A, { 3: '...KGKKKgK.MW', 11: '...KGGK..KgK.', 12: '..KGK....KgK.', 13: '.KGGK....KggK', 14: '.KKKK....KKKK' })];
+const ARMOR_ATK = withRows(ARMOR_A, { 0: 'W...KKKKK....', 1: 'MW.KhGGGgK...', 2: 'MWbKGKKKgK...', 3: '.KbbGCKCgK...', 4: '...bGKKKgK...', 5: '..KKKGGgKK...', 6: '.KhGKhGGgK...', 7: 'KhGGKGGGgK...', 8: 'KGgKKGGGgK...', 9: '.KK.KdddgK...', 10: '....KGGKgK...' });
+
+// ----- more bosses (drawn at 2x) -----
+const GLOOP_A = norm([
+  '.......Y.Y.Y......',
+  '.......YYYYY......',
+  '......KKKKKKK.....',
+  '....KKhhhGGGGKK...',
+  '...KhhGGGGGGGGgK..',
+  '..KhGGGGGGGGGGGgK.',
+  '.KhGGWWGGGGWWGGGgK',
+  '.KGGGWKGGGGWKGGGgK',
+  'KhGGGGGGGGGGGGGGgK',
+  'KGGGGGKKKKKKGGGggK',
+  'KGGGGGKWWWWKGGGggK',
+  'KgGGGGGKKKKGGGgggK',
+  'KggGGGGGGGGGGggddK',
+  '.KgggggggggggggddK',
+  '..KKKKKKKKKKKKKKK.',
+]);
+const GLOOP = [GLOOP_A, ['..................', ...GLOOP_A.slice(0, 4), ...GLOOP_A.slice(5)]];
+const GLOOP_ATK = withRows(GLOOP_A, { 9: 'KGGGGKKKKKKKKGGggK', 10: 'KGGGGKWdddddWKGggK', 11: 'KgGGGKdddddddKgggK', 12: 'KggGGKKWWWWKKggddK' });
+
+const BONES_A = norm([
+  '.....KKKKKK.......',
+  '....KWWWWWgK......',
+  '...KWWWWWWWgK.....',
+  '...KWKKWKKWgK.....',
+  '...KWKCWKCWgK.....',
+  '...KWWWKWWWgK.....',
+  '....KWKWKWgK...KK.',
+  '.KK..KKKKKK...KWWK',
+  'KWWKKWWWWWWKK.KWgK',
+  'KWKKWKgWWgKWKKWgK.',
+  '.KKWKKWWWWKKWKWgK.',
+  '..KWKgKWWKgKWWgK..',
+  '...KK.KWWK.KKKK...',
+  '.....KWKKWK.......',
+  '....KWK..KWK......',
+  '...KWWK..KWWK.....',
+  '...KKK....KKK.....',
+]);
+const BONES = [BONES_A, withRows(shiftRows(BONES_A, 0, 5, 1), { 14: '....KWK...KWK.....', 15: '...KWWK...KWWK....', 16: '...KKK.....KKK....' })];
+const BONES_ATK = withRows(BONES_A, { 3: '...KWKKWKKWgK.....', 5: '...KWWWKWWWgK.....', 6: '...KWWWWWWgK......', 7: '.KK.KWKWKWK.KK....', 8: 'KWWKKKKKKKKKWWK...', 9: 'KWKKWKgWWgKWKWWK..' });
+
+const QUEEN_A = norm([
+  '......KKKKKK......',
+  '....KKhGGGGgKK....',
+  '...KhGGYGGYGGgK...',
+  '...KGGGGYYGGGgK...',
+  '.K.KgGGGGGGGGgK.K.',
+  'K.K.KKgGGGGgKK.K.K',
+  'K..KKhGGGGGGgKK..K',
+  '.KK.KGRGRRGRGK.KK.',
+  'K..KKGGGGGGGgKK..K',
+  'K.K..KWKGGKWK..K.K',
+  '.K..K.KWKKWK.K..K.',
+  'K..K...K..K...K..K',
+  '..K............K..',
+]);
+const QUEEN = [QUEEN_A, withRows(QUEEN_A, { 4: 'K..KgGGGGGGGGgK..K', 5: '.KK.KKgGGGGgKK.KK.', 10: 'K..KK.KWKKWK.KK..K', 11: '.KK.....KK.....KK.', 12: '..................' })];
+const QUEEN_ATK = withRows(QUEEN_A, { 9: 'K.K..KWKGGKWK..K.K', 10: '.K..KKWWKKWWKK..K.', 11: 'K..K..W....W..K..K', 12: '..K...C....C..K...' });
+
+const MOON_A = norm([
+  '...K.K......K.K.K.',
+  '..KhKhK...KhKhKhK.',
+  '..KhGGGK.KhhhhhhhK',
+  '.KGGCGGhKhhhhhhhhK',
+  'KGGGGGGhhhGGGGGGgK',
+  'WKKGGGGGGGGGGGGGgK',
+  'KWKKGGGGGGGGGGGggK',
+  'WKWKgGGgggggggKgK.',
+  '.K.KgGK.KggK.KgKK.',
+  '...KgGK..KgK.KgK..',
+  '..KGgK..KGgK.KgK..',
+  '..KKKK..KKKK.KKK..',
+]);
+const MOON = [MOON_A, withRows(MOON_A, { 8: '.K.KgK..KgK..KgK..', 9: '..KgK..KgK..KgK...', 10: '.KGgK.KGgK..KgK...', 11: '.KKKK.KKKK..KKK...' })];
+const MOON_ATK = withRows(MOON_A, { 1: '.KhKhK.....KhKhKhK', 2: '.KhGGGK...KhhhhhhK', 5: 'WKKGGGGGGGGGGGGGgK', 6: 'W.KWGGGGGGGGGGGggK', 7: 'WKKKgGGgggggggKgK.' });
+
+const FIEND_A = norm([
+  '..W..........W....',
+  '..WK........KW....',
+  '...WKKKKKKKKW.....',
+  '...KhGGGGGGgK.....',
+  '...KGEKGGKEgK.....',
+  '..KKGGGGGGGgKK....',
+  '.KdKGWKWKWKgKdK...',
+  'KddKKGGGGGgKKddK..',
+  'KdddKhGGGGgKdddK..',
+  'KddKGGhGGGGgKddK..',
+  '.KKGGKGGGGKgGKK...',
+  '..KGK.KGGGgK.KgK..',
+  '..KFK.KGGgK..KFK..',
+  '.....KGgKGgK......',
+  '....KGGK.KGgK.....',
+  '...KKKK...KKKK....',
+]);
+const FIEND = [FIEND_A, withRows(FIEND_A, { 6: 'KddKGWKWKWKgKddK..', 7: 'KdddKGGGGGgKdddK..', 8: '.KddKhGGGGgKddK...', 9: '..KKGGhGGGGgKK....', 12: '..KOK.KGGgK..KOK..' })];
+const FIEND_ATK = withRows(FIEND_A, { 8: 'OFOdKhGGGGgKdddK..', 9: 'FFFKGGhGGGGgKddK..', 10: 'OFGGKKGGGGKgGKK...', 11: '.KKK..KGGGgK.KgK..', 12: '......KGGgK..KFK..' });
+
+const WYRM_A = norm([
+  '.....KKKKKK.......',
+  '...KKhhGGGGKK.....',
+  '..KhGGGGGGGGgK....',
+  '.KhGEKGGGGGGGgK...',
+  'KWGGGGGGGGGGGgK...',
+  'KdWKKKKKGGGGGgK...',
+  'KOdddddKGhGGggK...',
+  'KdWKKKKKGhGGggK...',
+  'KWGGGGKKhGGGggK...',
+  '.KKKKK.KhOhGggK...',
+  '......KhGGGGggK...',
+  '......KhGOGGgK....',
+  '.....KhGGGGggK....',
+  '...KKOOhGGGggKKK..',
+  '.KOOFFOOOOOOOOOOK.',
+  'KOFFFOOOFFOOOFOOOK',
+  '.KKKKKKKKKKKKKKKK.',
+]);
+const WYRM = [WYRM_A, withRows(shiftRows(WYRM_A, 0, 9, 1), { 14: '.KOFFOOOOOFOOOOOK.', 15: 'KOOFFOOOOFFOOOFOOK' })];
+const WYRM_ATK = withRows(WYRM_A, { 4: 'KWGGGGGGGGGGGgK...', 5: 'dWKKKKKKGGGGGgK...', 6: 'OFOddddKGhGGggK...', 7: 'FOFdddKKGhGGggK...', 8: 'OWKKKKKKhGGGggK...', 9: '.WGGGGKKhOhGggK...', 10: '.KKKKKKhGGGGggK...' });
+
+const DK_A = norm([
+  '..W......W........',
+  '..WK....KW........',
+  '...KKKKKK.........',
+  '..KhGGGGgK......M.',
+  '..KGKKKKgK.....MM.',
+  '..KGCKKCgK....MM..',
+  '..KGGKKGgK...MM...',
+  '.KKKGGGgKKK.MM....',
+  'KrKhGGGGGgKKYK....',
+  'KrKGGhGGGgKYbK....',
+  'KrrKGGGGgKGKK.....',
+  'KrrKmmYmmKGK......',
+  '.KrKGGKGGgK.......',
+  '..KKGGKGGgK.......',
+  '...KGGK.KGgK......',
+  '..KGGK...KGgK.....',
+  '..KKKK...KKKK.....',
+]);
+const DK = [DK_A, withRows(DK_A, { 8: 'KrKhGGGGGgKKYK....', 12: 'KrrKGGKGGgK.......', 13: '.KKKGGKGGgK.......', 14: '...KGGK..KGgK.....', 15: '...KGK....KGgK....', 16: '..KKKK...KKKKK....' })];
+const DK_ATK = withRows(DK_A, { 3: '..KhGGGGgK........', 4: '..KGKKKKgK........', 5: '..KGCKKCgK........', 6: 'MMKGGKKGgK........', 7: '.MMMGGGgKKK.......', 8: 'KrKMMYGGGgK.......', 9: 'KrKGYbGGGgK.......', 10: 'KrrKbGGGgKK.......', 11: 'KrrKmmYmmK........' });
+
+const VAMP_A = norm([
+  '......KKKK......',
+  '.....KddddK.....',
+  '....KddddddK....',
+  '....KdSSdSdK....',
+  '...KKSRSSRSKK...',
+  'KK.KdSSSSSSdK.KK',
+  'KdKKdKSWWSKdKKdK',
+  'KddKKKSSSSKKKddK',
+  'KdddKGKYYKGKdddK',
+  'KddKGGKrrKGGKddK',
+  '.KdKGGrrrrGGKdK.',
+  '..KKGGrrrrGGKK..',
+  '...KGGrrrrGGK...',
+  '..KGGGrrrrGGgK..',
+  '.KGGGGrrrrGGggK.',
+  'KKKKKKKKKKKKKKKK',
+]);
+const VAMP = [VAMP_A, withRows(VAMP_A, { 4: 'K..KKSRSSRSKK..K', 5: 'KdKKdSSSSSSdKKdK', 6: 'KddKdKSWWSKdKddK', 7: 'KdddKKSSSSKKdddK', 8: '.KddKGKYYKGKddK.', 9: '..KKGGKrrKGGKK..', 10: '...KGGrrrrGGK...', 11: '...KGGrrrrGGK...' })];
+const VAMP_ATK = withRows(VAMP_A, { 0: 'K.....KKKK.....K', 1: 'dK...KddddK...Kd', 2: 'ddK.KddddddK.Kdd', 3: 'dddKKdSSdSdKKddd', 4: 'ddddKSRSSRSKdddd', 5: 'dddKdSSSSSSdKddd', 6: 'ddKKdKWSSWKdKKdd', 7: 'dK.KKKSWWSKKK.Kd', 8: 'K..KGKKYYKGK...K', 9: '...KGGKrrKGGK...', 10: '...KGGrrrrGGK...', 11: '...KGGrrrrGGK...' });
+
 const MONSTERS = {
   slime: { name: 'Slime', hp: 12, xp: 2, speed: 0.35, hop: true, death: 'splat', frames: SLIME },
   bat: { name: 'Bat', hp: 9, xp: 2, speed: 0.6, fly: true, death: 'spiral', frames: BAT },
@@ -238,21 +551,71 @@ const MONSTERS = {
   knight: { name: 'Dark Knight', hp: 110, xp: 6, speed: 0.3, death: 'topple', frames: KNIGHT, atk: KNIGHT_ATK },
   wraith: { name: 'Wraith', hp: 80, xp: 5, speed: 0.5, fly: true, ghost: true, death: 'dissolve', frames: WRAITH },
   gargoyle: { name: 'Gargoyle', hp: 95, xp: 5, speed: 0.45, fly: true, death: 'collapse', frames: GARGOYLE },
+  rat: { name: 'Giant Rat', hp: 14, xp: 2, speed: 0.55, death: 'flop', frames: RAT, atk: RAT_ATK },
+  mimic: { name: 'Mimic', hp: 26, xp: 4, speed: 0.3, hop: true, death: 'collapse', frames: MIMIC, atk: MIMIC_ATK },
+  spider: { name: 'Web Spider', hp: 32, xp: 3, speed: 0.55, death: 'flop', frames: SPIDER, atk: SPIDER_ATK },
+  boar: { name: 'Tusked Boar', hp: 44, xp: 4, speed: 0.6, death: 'flop', frames: BOAR, atk: BOAR_ATK },
+  salamander: { name: 'Salamander', hp: 50, xp: 4, speed: 0.45, death: 'flop', frames: SALA, atk: SALA_ATK },
+  cinder: { name: 'Cinder Wisp', hp: 38, xp: 3, speed: 0.65, fly: true, ghost: true, death: 'dissolve', frames: WISP },
+  cultist: { name: 'Shadow Cultist', hp: 85, xp: 5, speed: 0.35, death: 'dissolve', frames: CULTIST, atk: CULTIST_ATK },
+  armor: { name: 'Haunted Armor', hp: 105, xp: 6, speed: 0.25, death: 'collapse', frames: ARMOR, atk: ARMOR_ATK },
   // Bosses: hp is the reference HP at level 1; battle.js scales it to the hero's damage.
-  boss: { name: 'Goblin Warlord', hp: 300, xp: 60, speed: 0.25, boss: true, death: 'topple', frames: GOBLIN, atk: GOBLIN_ATK },
-  elder: { name: 'Elderbark the Ancient', hp: 320, xp: 80, speed: 0.2, boss: true, death: 'topple', frames: ELDER, atk: ELDER_ATK },
-  drake: { name: 'Ignarok the Magma Drake', hp: 340, xp: 100, speed: 0.3, boss: true, death: 'collapse', frames: DRAKE, atk: DRAKE_B },
-  lich: { name: 'The Lich King', hp: 360, xp: 120, speed: 0.25, boss: true, death: 'dissolve', frames: LICH, atk: LICH_ATK },
+  // Optional boss fields: flavor (arrival line), aura (glow color), atkTint (wind-up flash).
+  boss: { name: 'Goblin Warlord', hp: 300, xp: 60, speed: 0.25, boss: true, death: 'topple', frames: GOBLIN, atk: GOBLIN_ATK, flavor: 'Bangs his shield and calls the horde.', aura: [255, 140, 90] },
+  slimeking: { name: 'King Gloop', hp: 290, xp: 60, speed: 0.2, boss: true, hop: true, death: 'splat', frames: GLOOP, atk: GLOOP_ATK, flavor: 'Wobbles in, crown and all.', aura: [120, 255, 210], atkTint: [120, 255, 200] },
+  bonelord: { name: 'Skullmaw the Bone Tyrant', hp: 310, xp: 65, speed: 0.25, boss: true, death: 'collapse', frames: BONES, atk: BONES_ATK, flavor: 'Rattles up from the ossuary.', aura: [140, 240, 255], atkTint: [140, 240, 255] },
+  elder: { name: 'Elderbark the Ancient', hp: 320, xp: 80, speed: 0.2, boss: true, death: 'topple', frames: ELDER, atk: ELDER_ATK, flavor: 'The forest itself wakes up.', aura: [150, 255, 120] },
+  spiderqueen: { name: 'Arachnessa the Brood Queen', hp: 300, xp: 80, speed: 0.35, boss: true, death: 'flop', frames: QUEEN, atk: QUEEN_ATK, flavor: 'Descends on a silver thread.', aura: [255, 210, 90], atkTint: [180, 255, 120] },
+  moonwolf: { name: 'Fenrath the Moon Wolf', hp: 310, xp: 85, speed: 0.45, boss: true, death: 'flop', frames: MOON, atk: MOON_ATK, flavor: 'Howls, and the moon answers.', aura: [170, 220, 255], atkTint: [170, 220, 255] },
+  drake: { name: 'Ignarok the Magma Drake', hp: 340, xp: 100, speed: 0.3, boss: true, death: 'collapse', frames: DRAKE, atk: DRAKE_B, flavor: 'Rises from the lava, wings ablaze.', aura: [255, 150, 60] },
+  infernal: { name: 'Balgoroth the Pit Fiend', hp: 350, xp: 100, speed: 0.3, boss: true, death: 'collapse', frames: FIEND, atk: FIEND_ATK, flavor: 'Steps through a gate of fire.', aura: [255, 90, 40], atkTint: [255, 170, 40] },
+  magmaworm: { name: 'Scorchmaw the Lava Wyrm', hp: 330, xp: 95, speed: 0.15, boss: true, death: 'collapse', frames: WYRM, atk: WYRM_ATK, flavor: 'Bursts out of the molten floor.', aura: [255, 190, 70], atkTint: [255, 200, 80] },
+  lich: { name: 'The Lich King', hp: 360, xp: 120, speed: 0.25, boss: true, death: 'dissolve', frames: LICH, atk: LICH_ATK, flavor: 'Cold light fills the hall.', aura: [190, 140, 255] },
+  deathknight: { name: 'Sir Mordred the Death Knight', hp: 370, xp: 120, speed: 0.25, boss: true, death: 'topple', frames: DK, atk: DK_ATK, flavor: 'Draws a blade that drinks the light.', aura: [140, 240, 255], atkTint: [120, 220, 255] },
+  vampire: { name: 'Count Vessarin', hp: 350, xp: 115, speed: 0.35, boss: true, death: 'dissolve', frames: VAMP, atk: VAMP_ATK, flavor: 'Unfolds his cape into the night.', aura: [255, 60, 90], atkTint: [255, 40, 80] },
 };
 
 // Biome rosters (weakest first) and the boss that guards each biome.
+// The dungeon's first entries are also its early-level roster (see battle.js).
 const ROSTERS = {
-  dungeon: ['slime', 'bat', 'goblin', 'skeleton'],
-  forest: ['wolf', 'shroom', 'treant'],
-  lava: ['imp', 'firebat', 'golem'],
-  castle: ['wraith', 'gargoyle', 'knight'],
+  dungeon: ['slime', 'bat', 'goblin', 'skeleton', 'rat', 'mimic'],
+  forest: ['wolf', 'shroom', 'treant', 'spider', 'boar'],
+  lava: ['imp', 'firebat', 'golem', 'salamander', 'cinder'],
+  castle: ['wraith', 'gargoyle', 'knight', 'cultist', 'armor'],
 };
+// BOSSES keeps each biome's original guardian; BOSS_POOLS is every boss a biome can send.
 const BOSSES = { dungeon: 'boss', forest: 'elder', lava: 'drake', castle: 'lich' };
+const BOSS_POOLS = {
+  dungeon: ['boss', 'slimeking', 'bonelord'],
+  forest: ['elder', 'spiderqueen', 'moonwolf'],
+  lava: ['drake', 'infernal', 'magmaworm'],
+  castle: ['lich', 'deathknight', 'vampire'],
+};
+const BIOME_ORDER = ['dungeon', 'forest', 'lava', 'castle'];
+const RETURNING_CHANCE = 0.2;
+
+// The biome a boss belongs to (null for regular monsters).
+function bossBiome(type) {
+  for (const b of BIOME_ORDER) if (BOSS_POOLS[b].includes(type)) return b;
+  return null;
+}
+
+// Pick the next boss for a biome. Never one of the last two bosses in
+// history (oldest first). Past the dungeon, sometimes a boss from an earlier
+// biome comes back for a rematch (a "returning foe"); the caller can check
+// bossBiome(type) !== biome to announce it and fight it at a higher level.
+function pickBoss(biome, history = [], lvl = 1, rnd = Math.random) {
+  const home = BOSS_POOLS[biome] ? biome : 'dungeon';
+  const recent = new Set((history || []).slice(-2));
+  const fresh = (list) => list.filter((t) => !recent.has(t));
+  const earlier = BIOME_ORDER.slice(0, BIOME_ORDER.indexOf(home)).flatMap((b) => BOSS_POOLS[b]);
+  const returning = fresh(earlier);
+  let pool = fresh(BOSS_POOLS[home]);
+  if (returning.length && lvl >= 5 && rnd() < RETURNING_CHANCE) pool = returning;
+  if (!pool.length) pool = fresh([...BOSS_POOLS[home], ...earlier]);
+  if (!pool.length) pool = BOSS_POOLS[home];
+  return pool[Math.min(pool.length - 1, Math.floor(rnd() * pool.length))];
+}
 
 const CROWN = ['.Y.Y.Y.', '.YYYYY.', '.KKKKK.'];
 const MONSTER_COLORS = {
@@ -273,6 +636,22 @@ const MONSTER_COLORS = {
   elder: [{ G: [104, 72, 50], g: [72, 48, 34], d: [44, 30, 22], h: [150, 110, 76], L: [70, 150, 70], l: [40, 100, 50], E: [150, 255, 120] }],
   drake: [{ G: [196, 58, 40], g: [136, 34, 30], d: [96, 26, 34], h: [255, 150, 90] }],
   lich: [{ G: [96, 50, 140], g: [64, 32, 98], d: [40, 20, 64], h: [150, 100, 200] }],
+  rat: [{ G: [138, 120, 112], g: [96, 82, 78], d: [62, 52, 50], h: [196, 178, 168] }, { G: [110, 96, 80], g: [76, 64, 52], d: [48, 40, 32], h: [164, 146, 120] }],
+  mimic: [{ G: [150, 98, 54], g: [104, 66, 36], d: [52, 18, 30], h: [206, 150, 90], M: [214, 178, 90], m: [150, 118, 56], r: [226, 70, 90] }],
+  spider: [{ G: [70, 58, 84], g: [46, 38, 58], d: [30, 24, 40], h: [124, 108, 146] }, { G: [96, 70, 50], g: [66, 48, 34], d: [42, 30, 22], h: [150, 116, 84] }],
+  boar: [{ G: [132, 90, 62], g: [94, 62, 42], d: [58, 36, 26], h: [184, 136, 96] }],
+  salamander: [{ G: [224, 112, 44], g: [168, 70, 32], d: [104, 38, 26], h: [255, 190, 110], r: [255, 90, 120] }],
+  cinder: [{ G: [255, 150, 50], g: [220, 80, 40], d: [140, 36, 30], h: [255, 236, 140], W: [255, 255, 230] }],
+  cultist: [{ G: [128, 30, 50], g: [88, 20, 36], d: [54, 12, 24], h: [184, 64, 84], E: [255, 90, 70] }],
+  armor: [{ G: [170, 128, 70], g: [120, 88, 46], d: [60, 46, 30], h: [226, 190, 120] }],
+  slimeking: [{ G: [70, 196, 170], g: [40, 140, 124], d: [24, 88, 80], h: [190, 255, 236] }],
+  bonelord: [{ G: [220, 214, 196], g: [150, 144, 130], d: [96, 92, 84], h: [255, 255, 245], W: [232, 226, 206] }],
+  spiderqueen: [{ G: [60, 44, 90], g: [40, 28, 64], d: [24, 16, 40], h: [120, 96, 170], R: [255, 70, 70], Y: [255, 190, 60] }],
+  moonwolf: [{ G: [170, 186, 214], g: [120, 134, 168], d: [76, 86, 116], h: [236, 244, 255] }],
+  infernal: [{ G: [196, 48, 40], g: [140, 30, 30], d: [80, 18, 30], h: [255, 120, 80] }],
+  magmaworm: [{ G: [90, 64, 60], g: [62, 42, 40], d: [36, 22, 24], h: [150, 110, 90] }],
+  deathknight: [{ G: [70, 76, 96], g: [46, 50, 66], d: [28, 30, 42], h: [130, 140, 170], r: [150, 26, 40] }],
+  vampire: [{ G: [70, 20, 44], g: [46, 12, 30], d: [22, 16, 28], h: [120, 50, 80], S: [236, 226, 236], r: [196, 30, 50] }],
 };
 const MONSTER_BASE = {
   K: [20, 16, 26], W: [236, 232, 218], R: [255, 64, 56], E: [255, 226, 110], Y: [255, 206, 70], b: [124, 82, 48], M: [196, 202, 216],
@@ -282,7 +661,6 @@ const MONSTER_BASE = {
 
 const DEATH_TICKS = 14, BOSS_DEATH_TICKS = 28;
 const scaleOf = (m) => m.scale || (m.boss ? 2 : 1);
-const frameSize = (rows) => [rows.reduce((a, r) => Math.max(a, r.length), 0), rows.length];
 const monsterSize = (m) => {
   const def = MONSTERS[m.type] || MONSTERS.slime;
   const [fw, fh] = frameSize(def.frames[0]);
@@ -373,7 +751,7 @@ function drawMonster(pc, m, t, { target = false } = {}) {
   let tint = null;
   if (m.flash > 0) tint = [[255, 255, 255], (m.flash >= 3 ? 0.85 : 0.5) * (m.boss ? 0.55 : 1)];
   else if (m.shock > 0) tint = [[190, 230, 255], 0.6];
-  else if (m.windup > 0) tint = [[255, 70, 50], at & 1 ? 0.45 : 0.2];
+  else if (m.windup > 0) tint = [def.atkTint || [255, 70, 50], at & 1 ? 0.45 : 0.2];
   else if (m.frozen > 0) tint = [[150, 225, 255], m.boss ? 0.3 : 0.5];
   else if (m.burn > 0 && at & 2) tint = [[255, 140, 40], 0.3];
   else if (m.curse > 0 && at & 2) tint = [[170, 80, 230], 0.3];
@@ -384,7 +762,7 @@ function drawMonster(pc, m, t, { target = false } = {}) {
   drawShadow(pc, x, Math.min(pc.h - 1, floor), w, def.fly || m.yOff < -2 ? 0.8 : 0.55);
   if (target) pc.glow(x + w / 2, y + h / 2, Math.max(w, h), [255, 80, 60], 0.12);
   if (m.elite) pc.glow(x + w / 2, y + h / 2, Math.max(w, h), [255, 210, 80], 0.2);
-  if (m.boss) pc.glow(x + w / 2, y + h / 2, Math.max(w, h) * 0.8, m.enraged ? [255, 50, 30] : pal.h, m.enraged ? 0.3 : 0.12);
+  if (m.boss) pc.glow(x + w / 2, y + h / 2, Math.max(w, h) * 0.8, m.enraged ? [255, 50, 30] : def.aura || pal.h, m.enraged ? 0.3 : 0.12);
   const ghostA = def.ghost ? 0.78 + 0.22 * Math.sin(at * 0.3) : 1;
   paint(pc, frame, pal, x + dx, y + dy, S, { tint, flip: m.flip, alpha: ghostA, seed: at >> 1 });
   if (m.type === 'boss') paint(pc, CROWN, pal, x + dx + Math.floor(w / 2) - 3 * S, y + dy - 3 * S, S, { tint });
@@ -486,4 +864,4 @@ function drawDeath(pc, m, def, pal, S, w, h) {
   }
 }
 
-module.exports = { MONSTERS, MONSTER_COLORS, ROSTERS, BOSSES, drawMonster, monsterSize, paletteFor, deathTicks, paint };
+module.exports = { MONSTERS, MONSTER_COLORS, ROSTERS, BOSSES, BOSS_POOLS, pickBoss, bossBiome, drawMonster, monsterSize, paletteFor, deathTicks, paint };

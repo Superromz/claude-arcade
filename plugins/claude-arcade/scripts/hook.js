@@ -12,6 +12,7 @@
 const L = require('./lib');
 const M = require('./messages');
 const C = require('./character');
+const G = require('./guild');
 
 // Show the request in the game pane and wait for Y/N there. With no game
 // running, approvals turned off, or no answer in time, print nothing so
@@ -149,7 +150,7 @@ function main() {
         state.tools.summoning = (state.tools.summoning || 0) + 1;
         if (proj) proj.tools.summoning = (proj.tools.summoning || 0) + 1;
         turn.summoning = (turn.summoning || 0) + 1;
-        gain(L.TOOL_XP.summoning);
+        gain(C.xpFor(hero, 'summoning', L.TOOL_XP.summoning, ses.combo || 0)); // Warlocks get +50%
         set('summoning', type);
         const n = Object.keys(ses.party).length;
         const msg = M.say(th, 'summon', { desc: type }, cls.name) + (n > 1 ? ` · ${M.say(th, 'partyFull', { n })}` : '');
@@ -165,6 +166,22 @@ function main() {
         gain(5);
         if (input.agent_transcript_path) addTokens(input.agent_transcript_path, `agent:${input.agent_id}`);
         if (member) log('return', `${member.icon} The ${member.name || member.cls} returns with news. +5 ${t.xpLabel}`);
+        // The Guild: the departing agent may ask to join, and active recruits
+        // of the same class earn companion XP (never hero XP).
+        if (member) {
+          const { offer, levelUps } = G.onSubagentStop(state, member, id, now);
+          for (const g of levelUps) {
+            const msg = `⭐ ${g.name} the ${C.CLASSES[g.cls].name} reached guild level ${g.level}!`;
+            log('summon', msg);
+            if (cfg.toasts) state.pending.push(msg);
+          }
+          if (offer) {
+            const msg = `🤝 ${offer.name} the ${C.CLASSES[offer.cls].name} wants to join your guild! Accept in the game's Guild tab.`;
+            log('summon', msg, { cls: C.CLASSES[offer.cls].name });
+            // SubagentStop runs in the background: queue the toast for the next foreground event.
+            if (cfg.toasts) state.pending.push(msg);
+          }
+        }
         break;
       }
       case 'Notification':
