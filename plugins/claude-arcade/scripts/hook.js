@@ -93,7 +93,7 @@ function main() {
         const lvl = L.levelFor(state.xp);
         const msg = M.say(th, 'welcome', { lvl, title: L.titleFor(t, lvl), name: '', streak: state.streak.count }).replace(/\s+/g, ' ');
         log('welcome', msg);
-        if (input.source === 'startup' || input.source === 'resume') toasts.push(`🎮 ${msg}`);
+        if (cfg.toasts && (input.source === 'startup' || input.source === 'resume')) toasts.push(`🎮 ${msg}`);
         break;
       }
       case 'UserPromptSubmit': {
@@ -117,6 +117,8 @@ function main() {
       }
       case 'PostToolUse': {
         const mode = L.modeForTool(input.tool_name);
+        // Summons are counted once, when the agent actually joins (SubagentStart).
+        if (/^(Agent|Task)$/.test(input.tool_name || '')) { set('thinking'); break; }
         state.tools[mode] = (state.tools[mode] || 0) + 1;
         if (proj) proj.tools[mode] = (proj.tools[mode] || 0) + 1;
         turn[mode] = (turn[mode] || 0) + 1;
