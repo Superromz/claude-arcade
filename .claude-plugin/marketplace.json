@@ -1,12 +1,14 @@
 {
   "name": "claude-arcade",
-  "owner": { "name": "Superromz" },
-  "description": "Turn Claude Code into a game: animated HUD, XP, levels, achievements and a party of subagents.",
+  "owner": {
+    "name": "Superromz"
+  },
+  "description": "Claude Arcade: a game that lives in your Claude Code terminal.",
   "plugins": [
     {
       "name": "claude-arcade",
       "source": "./plugins/claude-arcade",
-      "description": "Gamified Claude Code HUD: animated status line, themed spinner, XP, levels, achievements and subagent party.",
+      "description": "Turn Claude Code into a game: create a hero that levels up from your real Claude usage. Monsters attack while Claude works, agents fight as companions, and every prompt is a quest.",
       "version": "0.5.0"
     }
   ]

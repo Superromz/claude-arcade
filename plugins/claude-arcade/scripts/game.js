@@ -6,7 +6,7 @@
 //   node game.js --snapshot [tab]      print one frame and exit
 //   node game.js --snapshot create     print the character creator
 //
-// Keys: 1-5 / space cast spells · click monsters to strike · w summon a wave
+// Keys: 1-6 / space cast spells · click monsters to strike · w summon a wave
 //       tab or ←→ views · c hero · t theme · p session · q quit
 'use strict';
 

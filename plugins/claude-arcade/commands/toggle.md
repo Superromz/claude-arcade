@@ -1,6 +1,6 @@
 ---
-description: Toggle Claude Arcade options - toasts (quest and level-up messages) or ascii (no emoji)
-argument-hint: "toasts|ascii"
+description: Toggle Claude Arcade options - toasts (quest and level-up messages), ascii (no emoji) or approvals (answer permission requests in the game pane)
+argument-hint: "toasts|ascii|approvals"
 allowed-tools: Bash(node:*)
 ---
 !`node "${CLAUDE_PLUGIN_ROOT}/scripts/arcade.js" toggle $ARGUMENTS`

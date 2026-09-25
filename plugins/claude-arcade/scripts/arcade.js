@@ -142,7 +142,7 @@ function stats() {
   const lo = L.xpForLevel(lvl), hi = L.xpForLevel(lvl + 1);
   const got = new Set(s.achievements);
   const lines = [
-    `HERO SHEET â€” ${t.name}`,
+    `HERO SHEET - ${t.name}`,
     `Level ${lvl} ${L.titleFor(t, lvl)}   ${L.bar((s.xp - lo) / (hi - lo), 20, '#', '-')} ${s.xp}/${hi} ${t.xpLabel}`,
     `Quests completed: ${s.quests}   Day streak: ${s.streak.count}`,
     `Edits forged: ${s.tools.editing || 0}   Commands cast: ${s.tools.running || 0}   Scouting: ${(s.tools.reading || 0) + (s.tools.searching || 0)}`,
@@ -153,7 +153,7 @@ function stats() {
     ...projectTable(s),
     '',
     `ACHIEVEMENTS (${got.size}/${L.ACHIEVEMENTS.length})`,
-    ...L.ACHIEVEMENTS.map((a) => `${got.has(a.id) ? '[x]' : '[ ]'} ${a.name} â€” ${a.desc}`),
+    ...L.ACHIEVEMENTS.map((a) => `${got.has(a.id) ? '[x]' : '[ ]'} ${a.name} - ${a.desc}`),
   ];
   console.log(lines.join('\n'));
 }
