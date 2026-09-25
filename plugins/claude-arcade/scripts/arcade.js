@@ -120,12 +120,20 @@ function stats() {
     `Edits forged: ${s.tools.editing || 0}   Commands cast: ${s.tools.running || 0}   Scouting: ${(s.tools.reading || 0) + (s.tools.searching || 0)}`,
     `Web scrying: ${s.tools.web || 0}   Party summons: ${s.tools.summoning || 0}   Plans drawn: ${s.tools.planning || 0}`,
     '',
+    ...rosterTable(cfg, s),
+    '',
     ...projectTable(s),
     '',
     `ACHIEVEMENTS (${got.size}/${L.ACHIEVEMENTS.length})`,
     ...L.ACHIEVEMENTS.map((a) => `${got.has(a.id) ? '[x]' : '[ ]'} ${a.name} â€” ${a.desc}`),
   ];
   console.log(lines.join('\n'));
+}
+
+function rosterTable(cfg, s) {
+  const heroes = L.heroList(cfg, s);
+  if (!heroes.length) return ['HEROES', '(none yet — open the game with /claude-arcade:play to create one)'];
+  return [`HEROES (${heroes.length})`, ...heroes.map((h) => `${h.active ? '▶' : ' '} ${h.name.padEnd(16)} Lv ${String(h.level).padEnd(3)} ${(require('./character').CLASSES[h.cls] || {}).name || h.cls}`.padEnd(40) + `${h.xp} XP · ${h.quests} quests · ${h.gold} gold`)];
 }
 
 // Per-project leaderboard, most XP first.

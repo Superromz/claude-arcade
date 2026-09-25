@@ -20,11 +20,13 @@ const { emit, floater, spawnWave, hitMonster, aliveMonsters, COOLDOWN, playerCas
 const { drawScene, sceneLines } = require('./scene');
 const { truncVis, panelLine, gradBar, barPart, ICONS, eventColor, collapse, stripIcon, questLog, fmtNum, heroCard, partyList, partyTab, trophiesTab, heroTab, hotbar, header, footer } = require('./panels');
 const { FIELDS, FIELD_LABEL, OPTIONS, openCreator, creatorFrame, creatorKey } = require('./creator');
+const { openRoster, rosterFrame, rosterKey } = require('./roster');
 
 // ---------- frame ----------
 
 function frame(cols, rows) {
   const d = snapshotData();
+  if (ui.screen === 'roster') return rosterFrame(cols, rows);
   if (ui.screen === 'create') return creatorFrame(cols, rows, d);
   const pal = UI[d.cfg.theme] || UI.rpg;
   const W = Math.max(50, cols);
@@ -57,7 +59,7 @@ function frame(cols, rows) {
   const sess = d.sid ? `${ui.pin ? 'pinned' : 'following'} ${d.sid.slice(0, 8)}` : 'no session';
   out.push(hotbar(d, pal, W));
   ui.hotbarRow = out.length;
-  out.push(footer(pal, W, [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['c', 'hero'], ['t', 'theme'], ['p', sess], ['q', 'quit']]));
+  out.push(footer(pal, W, [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']]));
   return out;
 }
 
@@ -75,7 +77,9 @@ function render(force = false) {
 function onKey(key) {
   const d = snapshotData();
   if (key === '\x03') return quit();
+  if (ui.screen === 'roster') { rosterAction(rosterKey(key), d); return render(true); }
   if (ui.screen === 'create') { creatorKey(key, d); return render(true); }
+  if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (key === 'q' || key === '\x1b') return quit();
   if (/^[1-6]$/.test(key)) playerCast(d, Number(key) - 1);
@@ -134,6 +138,39 @@ function saveProgress() {
   } catch {}
 }
 
+// ---------- hero roster ----------
+
+// Load the active hero's banked gold and kills and reset the battlefield.
+function enterGame() {
+  const g = L.loadState().game || {};
+  Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, lastEventT: Date.now() });
+  ui.xpPending = 0;
+  ui.screen = 'game';
+}
+
+function newHero() {
+  openCreator(snapshotData());
+  ui.create.ch = C.defaultCharacter(['mage', 'ranger', 'knight', 'warlock', 'bard', 'rogue'][Math.floor(Math.random() * 6)]);
+  ui.create.ch.name = 'Hero';
+  ui.create.isNew = true;
+  ui.create.title = 'Create a new hero';
+  ui.create.onDone = (look) => { L.createHero(look); enterGame(); };
+  ui.create.onCancel = () => { if ((L.loadConfig().heroes || []).length) openRoster(); else quit(); };
+}
+
+function rosterAction(a, d) {
+  if (!a) return;
+  if (a.quit) return quit();
+  if (a.play) return enterGame();
+  if (a.create) return newHero();
+  if (a.edit) {
+    openCreator(snapshotData());
+    ui.create.title = `Edit ${ui.create.ch.name}`;
+    ui.create.onDone = (look) => { const cfg = L.loadConfig(); cfg.character = { ...cfg.character, ...look }; L.saveConfig(cfg); openRoster(); };
+    ui.create.onCancel = () => openRoster();
+  }
+}
+
 function quit() {
   saveProgress();
   process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
@@ -144,6 +181,7 @@ if (process.argv.includes('--snapshot')) {
   const arg = process.argv[process.argv.indexOf('--snapshot') + 1];
   const cols = Number(process.env.COLUMNS) || 100, rows = Number(process.env.LINES) || 28;
   if (arg === 'create') openCreator(snapshotData());
+  else if (arg === 'roster') openRoster();
   else if (Number(arg) >= 1 && Number(arg) <= 4) ui.tab = Number(arg) - 1;
   ui.battle.lastEventT = 0; // replay recent events as spells
   const g = L.loadState().game || {};
@@ -164,7 +202,7 @@ if (process.argv.includes('--snapshot')) {
   process.on('SIGINT', quit);
   process.on('exit', () => { saveProgress(); process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`); });
   setInterval(saveProgress, 3000);
-  if (!C.getCharacter(L.loadConfig())) openCreator(snapshotData());
+  if ((L.loadConfig().heroes || []).length) openRoster(); else newHero();
   setInterval(() => { ui.tick++; try { render(); } catch {} }, 100);
   render(true);
 }

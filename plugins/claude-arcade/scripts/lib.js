@@ -74,10 +74,100 @@ function defaultState() {
 function loadState() { return { ...defaultState(), ...readJSON(STATE_FILE, {}) }; }
 function saveState(s) { writeJSON(STATE_FILE, s); }
 
+// config.character is the active hero's look; config.heroes is the roster
+// (looks only). Progress lives in state: the active hero's numbers at the top
+// level (so every other module just reads state.xp etc.), the others parked
+// in state.heroes[id] until switched to.
 function loadConfig() {
-  return { theme: 'rpg', ascii: false, toasts: true, ...readJSON(CONFIG_FILE, {}) };
+  const cfg = { theme: 'rpg', ascii: false, toasts: true, ...readJSON(CONFIG_FILE, {}) };
+  if (cfg.character && !cfg.heroes) {
+    // One-time migration of a pre-roster hero.
+    const id = newHeroId();
+    cfg.character = { ...cfg.character, id, createdAt: Date.now() };
+    cfg.heroes = [cfg.character];
+    cfg.activeHero = id;
+    try { writeJSON(CONFIG_FILE, cfg); } catch {}
+  }
+  return cfg;
 }
-function saveConfig(c) { writeJSON(CONFIG_FILE, c); }
+function saveConfig(c) {
+  if (c.heroes && c.activeHero && c.character) {
+    c.character.id = c.activeHero;
+    const i = c.heroes.findIndex((h) => h.id === c.activeHero);
+    if (i >= 0) c.heroes[i] = c.character; else c.heroes.push(c.character);
+  }
+  writeJSON(CONFIG_FILE, c);
+}
+
+// ---------- hero roster ----------
+
+const HERO_FIELDS = ['xp', 'quests', 'tools', 'achievements', 'tokens', 'tokenXp', 'battleXp', 'game'];
+const newHeroId = () => `hero-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+const freshProgress = () => ({ xp: 0, quests: 0, tools: {}, achievements: [], tokens: { input: 0, output: 0 }, tokenXp: 0, battleXp: 0, game: { gold: 0, kills: 0, inventory: [] } });
+
+function parkActive(state, cfg) {
+  if (!cfg.activeHero) return;
+  state.heroes ||= {};
+  state.heroes[cfg.activeHero] = { ...Object.fromEntries(HERO_FIELDS.map((k) => [k, state[k]])), lastPlayed: Date.now() };
+}
+function loadHero(state, id) {
+  const saved = (state.heroes && state.heroes[id]) || freshProgress();
+  for (const k of HERO_FIELDS) state[k] = saved[k] !== undefined ? saved[k] : freshProgress()[k];
+  if (state.heroes) delete state.heroes[id];
+}
+
+function switchHero(id) {
+  return withLock(() => {
+    const cfg = loadConfig(), state = loadState();
+    const hero = (cfg.heroes || []).find((h) => h.id === id);
+    if (!hero || cfg.activeHero === id) return { cfg, state };
+    parkActive(state, cfg);
+    loadHero(state, id);
+    cfg.activeHero = id; cfg.character = hero;
+    saveState(state); saveConfig(cfg);
+    return { cfg, state };
+  });
+}
+
+// Adds a hero with fresh progress and makes it active.
+function createHero(look) {
+  return withLock(() => {
+    const cfg = loadConfig(), state = loadState();
+    const hero = { ...look, id: newHeroId(), createdAt: Date.now() };
+    // The very first hero keeps any progress earned before heroes existed.
+    if (cfg.activeHero) { parkActive(state, cfg); loadHero(state, hero.id); }
+    cfg.heroes = [...(cfg.heroes || []), hero];
+    cfg.activeHero = hero.id; cfg.character = hero;
+    saveState(state); saveConfig(cfg);
+    return { cfg, state };
+  });
+}
+
+function deleteHero(id) {
+  return withLock(() => {
+    const cfg = loadConfig(), state = loadState();
+    if (!cfg.heroes || cfg.heroes.length <= 1) return { cfg, state };
+    if (cfg.activeHero === id) {
+      const next = cfg.heroes.find((h) => h.id !== id);
+      loadHero(state, next.id);
+      cfg.activeHero = next.id; cfg.character = next;
+    }
+    cfg.heroes = cfg.heroes.filter((h) => h.id !== id);
+    if (state.heroes) delete state.heroes[id];
+    saveState(state); saveConfig(cfg);
+    return { cfg, state };
+  });
+}
+
+// Every hero with its progress, for the roster screen and /stats.
+function heroList(cfg, state) {
+  return (cfg.heroes || []).map((h) => {
+    const active = h.id === cfg.activeHero;
+    const p = active ? state : (state.heroes && state.heroes[h.id]) || freshProgress();
+    const game = p.game || {};
+    return { ...h, active, xp: p.xp || 0, level: levelFor(p.xp || 0), quests: p.quests || 0, gold: game.gold || 0, kills: game.kills || 0, tools: p.tools || {}, achievements: (p.achievements || []).length, lastPlayed: active ? Date.now() : p.lastPlayed || h.createdAt };
+  });
+}
 
 function session(state, id) {
   const key = id || 'default';
@@ -297,5 +387,6 @@ function unlock(state, ses) {
 module.exports = {
   HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
   readJSON, writeJSON, readStdin, loadState, saveState, loadConfig, saveConfig,
+  switchHero, createHero, deleteHero, heroList, HERO_FIELDS,
   session, pruneSessions, project, projectRoot, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,
 };
