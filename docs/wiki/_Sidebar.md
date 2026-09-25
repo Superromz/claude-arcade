@@ -11,6 +11,7 @@
 - [Combat and Spells](Combat-and-Spells)
 - [Companions](Companions)
 - [Guild](Guild)
+- [Bounties](Bounties)
 - [Progression and XP](Progression-and-XP)
 - [Biomes and Themes](Biomes-and-Themes)
 - [Status Line and Toasts](Status-Line-and-Toasts)

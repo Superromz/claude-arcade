@@ -263,8 +263,14 @@ function bar(ratio, width, full = '█', empty = '░') {
 const THEMES = {
   rpg: {
     name: 'Dungeon Crawl',
-    titles: ['Peasant', 'Squire', 'Apprentice Coder', 'Code Knight', 'Bug Slayer', 'Refactor Paladin',
-      'Merge Sorcerer', 'Archmage of Types', 'Legendary Hacker', 'Mythic Architect', 'Elder Code God'],
+    titles: [
+      'Peasant', 'Squire', 'Apprentice Coder', 'Code Knight', 'Bug Slayer', 'Refactor Paladin',
+      'Merge Sorcerer', 'Archmage of Types', 'Lint Warden', 'Stack Ranger', 'Regex Druid', 'Test Templar',
+      'Async Assassin', 'Null Exorcist', 'Cache Alchemist', 'Pipeline Warlord', 'Heap Necromancer', 'Kernel Crusader',
+      'Commit Champion', 'Dragon of Diffs', 'Lord of Lambdas', 'Grand Debugger', 'Rebase Runesmith', 'High Priest of CI',
+      'Monad Monk', 'Keeper of the Monorepo', 'Warden of Prod', 'Archon of APIs', 'Legendary Hacker', 'Mythic Architect',
+      'Code Demigod', 'Elder Code God',
+    ],
     xpLabel: 'XP', hpLabel: '❤',
     party: '⚔ party',
     modes: {
@@ -281,16 +287,35 @@ const THEMES = {
       hurt: { frames: ['💥 😵', '💢 😵'], verb: 'Took a hit' },
       waiting: { frames: ['🛡 ❔', '🛡 ❕'], verb: 'Awaiting your command' },
     },
-    spinnerVerbs: ['Rolling for initiative', 'Consulting the oracle', 'Grinding XP', 'Brewing potions',
-      'Sharpening swords', 'Looting the codebase', 'Casting fireball', 'Slaying bugs', 'Reading ancient scrolls',
-      'Deciphering runes', 'Crafting artifacts', 'Questing', 'Leveling up', 'Summoning familiars'],
-    tips: ['Every edit forged earns XP ⚒', 'Failed commands cost HP — heal by finishing quests 🏆',
-      'Summon subagents to build your party 🧝', 'Run /claude-arcade:stats to see your hero sheet'],
+    spinnerVerbs: [
+      'Rolling for initiative', 'Consulting the oracle', 'Grinding XP', 'Brewing potions',
+      'Sharpening swords', 'Looting the codebase', 'Casting fireball', 'Slaying bugs',
+      'Reading ancient scrolls', 'Deciphering runes', 'Crafting artifacts', 'Questing',
+      'Leveling up', 'Summoning familiars', 'Taming the regex beast', 'Polishing the armor',
+      'Bargaining with goblins', 'Lifting the merge curse', 'Mapping the dungeon', 'Enchanting the tests',
+      'Feeding the dragon', 'Haggling with the blacksmith', 'Warding off null pointers', 'Tracking footprints in the logs',
+      'Lighting the torches', 'Chanting the build rite', 'Counting the loot', 'Waking the ancient compiler',
+      'Banishing flaky tests', 'Scrying the stack trace',
+    ],
+    tips: [
+      'Every edit forged earns XP ⚒', 'Failed commands cost HP — heal by finishing quests 🏆',
+      'Summon subagents to build your party 🧝', 'Run /claude-arcade:stats to see your hero sheet',
+      'Daily bounties pay gold, never XP 📜', 'Weekly bounties reset every Monday (UTC) 📜',
+      'Chain tool calls without a failure to build a combo 🔥', 'Your class gets +50% XP on its specialty ⚔',
+      'Gold buys hats, pets and buffs in the shop 🛒', 'Keep your daily streak alive for trophies 🏅',
+      'Bosses show up during long quests ☠', 'Some trophies are secret. Try questing after midnight 🌙',
+    ],
   },
   space: {
     name: 'Star Command',
-    titles: ['Cadet', 'Ensign', 'Lieutenant', 'Commander', 'Captain', 'Commodore', 'Rear Admiral',
-      'Vice Admiral', 'Admiral', 'Fleet Admiral', 'Galactic Legend'],
+    titles: [
+      'Cadet', 'Ensign', 'Lieutenant', 'Asteroid Ace', 'Commander', 'Comet Chaser',
+      'Captain', 'Warp Engineer', 'Nebula Navigator', 'Commodore', 'Orbit Architect', 'Pulsar Pilot',
+      'Rear Admiral', 'Quasar Captain', 'Void Voyager', 'Vice Admiral', 'Starship Strategist', 'Nova Knight',
+      'Admiral', 'Sector Marshal', 'Galaxy Warden', 'Fleet Admiral', 'Wormhole Wizard', 'Dark Matter Adept',
+      'Supernova Sovereign', 'Star Forger', 'Constellation Lord', 'Cosmic Architect', 'Galactic Legend', 'Universal Overmind',
+      'Big Bang Theorist', 'Singularity',
+    ],
     xpLabel: 'XP', hpLabel: '🛡',
     party: '🚀 fleet',
     modes: {
@@ -307,16 +332,33 @@ const THEMES = {
       hurt: { frames: ['☄ 💥', '☄ 🔥'], verb: 'Hull breach' },
       waiting: { frames: ['📟 ?', '📟 !'], verb: 'Awaiting orders' },
     },
-    spinnerVerbs: ['Warping', 'Calibrating sensors', 'Charging hyperdrive', 'Reticulating nebulae',
-      'Scanning the void', 'Docking', 'Terraforming', 'Plotting a course', 'Engaging tractor beam'],
-    tips: ['Every mission completed earns XP 🌟', 'Launch subagents to grow your fleet 🛸',
-      'Run /claude-arcade:stats for your service record'],
+    spinnerVerbs: [
+      'Warping', 'Calibrating sensors', 'Charging hyperdrive', 'Reticulating nebulae',
+      'Scanning the void', 'Docking', 'Terraforming', 'Plotting a course',
+      'Engaging tractor beam', 'Rerouting power', 'Venting plasma', 'Aligning the dish',
+      'Decoding transmissions', 'Refueling at the station', 'Dodging asteroids', 'Slingshotting around a moon',
+      'Recalibrating the deflector', 'Polishing the viewport', 'Mining the asteroid belt', 'Compiling star charts',
+      'Pinging the relay', 'Cooling the reactor', 'Consulting the ship AI', 'Boosting shields',
+    ],
+    tips: [
+      'Every mission completed earns XP 🌟', 'Launch subagents to grow your fleet 🛸',
+      'Run /claude-arcade:stats for your service record', 'Daily contracts pay gold, never XP 📡',
+      'Weekly contracts reset every Monday (UTC) 📡', 'Clean runs build a combo for bonus XP 🔥',
+      'Gold buys gear and boosts in the shop 🛒', 'Keep your daily streak for commendations 🎖',
+      'Big threats appear during long missions ☄',
+    ],
   },
   retro: {
     // Plain ASCII: safe for any font / terminal.
     name: '8-Bit Arcade',
-    titles: ['NOOB', 'PLAYER 1', 'CHALLENGER', 'HI-SCORER', 'COMBO KING', 'BOSS SLAYER', 'SPEEDRUNNER',
-      'GRANDMASTER', 'LEGEND', 'MAX LEVEL', 'KILL SCREEN'],
+    titles: [
+      'NOOB', 'PLAYER 1', 'CHALLENGER', 'HI-SCORER', 'COMBO KING', 'BOSS SLAYER',
+      'SPEEDRUNNER', 'PIXEL PUSHER', 'COIN MUNCHER', 'GLITCH HUNTER', 'WALL JUMPER', 'WARP ZONER',
+      'PERFECT RUNNER', 'TAS BOT', 'FRAME PERFECT', 'SEQUENCE BREAKER', 'PALETTE SWAPPER', 'CHEAT CODER',
+      '1CC HERO', 'ARCADE CHAMP', 'BOSS RUSHER', 'NEW GAME PLUS', 'HARD MODE', 'GRANDMASTER',
+      'PIXEL PERFECT', 'WORLD RECORD', 'LEGEND', 'HALL OF FAMER', 'FINAL BOSS', 'MAX LEVEL',
+      '256 OVERFLOW', 'KILL SCREEN',
+    ],
     xpLabel: 'PTS', hpLabel: 'HP',
     party: 'P2+',
     modes: {
@@ -333,10 +375,21 @@ const THEMES = {
       hurt: { frames: ['(x_x)', '(X_X)'], verb: 'OUCH!' },
       waiting: { frames: ['(._.)?', '(._.)!'], verb: 'PRESS START' },
     },
-    spinnerVerbs: ['LOADING', 'BUFFERING', 'BLOWING ON CARTRIDGE', 'GRINDING', 'SPEEDRUNNING',
-      'SAVING GAME', 'ENTERING CHEAT CODE', 'RESPAWNING', 'CHARGING SUPER'],
-    tips: ['UP UP DOWN DOWN LEFT RIGHT LEFT RIGHT B A', 'Finish turns to rack up PTS',
-      'Run /claude-arcade:stats for the high score table'],
+    spinnerVerbs: [
+      'LOADING', 'BUFFERING', 'BLOWING ON CARTRIDGE', 'GRINDING',
+      'SPEEDRUNNING', 'SAVING GAME', 'ENTERING CHEAT CODE', 'RESPAWNING',
+      'CHARGING SUPER', 'WALL JUMPING', 'COLLECTING COINS', 'FINDING WARP PIPE',
+      'MASHING BUTTONS', 'CLIPPING THROUGH WALLS', 'DODGING BARRELS', 'EATING POWER PELLET',
+      'RESETTING RNG', 'ADJUSTING TRACKING', 'REWINDING TAPE', 'CHECKING HIGH SCORES',
+      'PAUSING', 'BEATING BOSS RUSH', 'TYPING INITIALS',
+    ],
+    tips: [
+      'UP UP DOWN DOWN LEFT RIGHT LEFT RIGHT B A', 'Finish turns to rack up PTS',
+      'Run /claude-arcade:stats for the high score table', 'BOUNTIES PAY GOLD, NOT PTS',
+      'WEEKLY BOUNTIES RESET ON MONDAY (UTC)', 'NO MISS = COMBO BONUS',
+      'SPEND GOLD IN THE SHOP', 'DAILY STREAKS UNLOCK TROPHIES',
+      'LONG STAGES SPAWN BOSSES',
+    ],
   },
 };
 
@@ -379,20 +432,96 @@ function describeTool(name, input = {}) {
 
 // value() is progress toward goal, so the game pane can draw progress bars.
 const tool = (k) => (s) => s.tools[k] || 0;
+// Cheap, missing-field-safe readers for achievement values.
+const gameOf = (s) => (s && s.game) || {};
+const streakOf = (s) => ((s && s.streak) || {}).count || 0;
+const toolSum = (s) => Object.values((s && s.tools) || {}).reduce((n, v) => n + (Number(v) || 0), 0);
+const TOOL_KINDS = ['editing', 'running', 'reading', 'searching', 'web', 'summoning', 'planning'];
+// The roster lives in config.json; cache it briefly since the trophies tab
+// evaluates every achievement each frame.
+let heroCache = { t: 0, n: 0 };
+function heroCount() {
+  if (Date.now() - heroCache.t > 2000) {
+    try { heroCache = { t: Date.now(), n: (loadConfig().heroes || []).length }; } catch { heroCache = { t: Date.now(), n: 0 }; }
+  }
+  return heroCache.n;
+}
+// The turn that just ended (the Stop hook sets victory right before unlock).
+const justWon = (ses) => !!(ses && ses.mode === 'victory' && ses.since);
+const wonAt = (ses) => new Date(ses.since);
+const turnTools = (ses) => (ses && ses.turn ? Object.keys(TOOL_XP).reduce((n, k) => n + (ses.turn[k] || 0), 0) : 0);
+
 const ACHIEVEMENTS = [
+  // quests
   { id: 'first-quest', name: 'First Blood', desc: 'Complete your first turn', goal: 1, value: (s) => s.quests },
+  { id: 'quests-10', name: 'Adventurer', desc: 'Complete 10 turns', goal: 10, value: (s) => s.quests || 0 },
   { id: 'quests-100', name: 'Centurion', desc: 'Complete 100 turns', goal: 100, value: (s) => s.quests },
+  { id: 'quests-500', name: 'Veteran', desc: 'Complete 500 turns', goal: 500, value: (s) => s.quests || 0 },
+  { id: 'quests-1000', name: 'Living Legend', desc: 'Complete 1,000 turns', goal: 1000, value: (s) => s.quests || 0 },
+  // tools
+  { id: 'forge-1', name: 'Tinkerer', desc: 'Make your first edit', goal: 1, value: tool('editing') },
   { id: 'forge-50', name: 'Blacksmith', desc: 'Make 50 edits', goal: 50, value: tool('editing') },
   { id: 'forge-500', name: 'Master Smith', desc: 'Make 500 edits', goal: 500, value: tool('editing') },
+  { id: 'forge-2000', name: 'Forge Lord', desc: 'Make 2,000 edits', goal: 2000, value: tool('editing') },
+  { id: 'cast-10', name: 'Apprentice Caster', desc: 'Run 10 commands', goal: 10, value: tool('running') },
   { id: 'cast-100', name: 'Spellslinger', desc: 'Run 100 commands', goal: 100, value: tool('running') },
+  { id: 'cast-1000', name: 'Archmage', desc: 'Run 1,000 commands', goal: 1000, value: tool('running') },
   { id: 'scout-200', name: 'Pathfinder', desc: 'Read or search 200 times', goal: 200, value: (s) => (s.tools.reading || 0) + (s.tools.searching || 0) },
+  { id: 'scout-2000', name: 'Loremaster', desc: 'Read or search 2,000 times', goal: 2000, value: (s) => (s.tools.reading || 0) + (s.tools.searching || 0) },
+  { id: 'web-25', name: 'Far Seer', desc: 'Use the web or an MCP tool 25 times', goal: 25, value: tool('web') },
+  { id: 'web-250', name: 'Eagle Master', desc: 'Use the web or an MCP tool 250 times', goal: 250, value: tool('web') },
+  { id: 'plan-10', name: 'Strategist', desc: 'Plan or update todos 10 times', goal: 10, value: tool('planning') },
+  { id: 'plan-100', name: 'Grand Tactician', desc: 'Plan or update todos 100 times', goal: 100, value: tool('planning') },
+  { id: 'all-rounder', name: 'Jack of All Trades', desc: 'Use every kind of tool at least once', goal: TOOL_KINDS.length, value: (s) => TOOL_KINDS.filter((k) => (s.tools || {})[k] > 0).length },
+  { id: 'tools-10k', name: 'Ten Thousand Spells', desc: 'Make 10,000 tool calls', goal: 10000, value: toolSum },
+  // party
   { id: 'summon-1', name: 'Party Up', desc: 'Summon your first subagent', goal: 1, value: tool('summoning') },
   { id: 'summon-25', name: 'Guild Master', desc: 'Summon 25 subagents', goal: 25, value: tool('summoning') },
-  { id: 'full-party', name: 'Full Party', desc: 'Have 3 subagents running at once', goal: 3, value: (s, ses) => (ses ? Object.keys(ses.party).length : 0) },
+  { id: 'summon-100', name: 'Legion Commander', desc: 'Summon 100 subagents', goal: 100, value: tool('summoning') },
+  { id: 'full-party', name: 'Full Party', desc: 'Have 3 subagents running at once', goal: 3, value: (s, ses) => (ses ? Object.keys(ses.party || {}).length : 0) },
+  { id: 'party-5', name: 'Raid Group', desc: 'Have 5 subagents running at once', goal: 5, value: (s, ses) => (ses ? Object.keys(ses.party || {}).length : 0) },
+  // combo
   { id: 'combo-25', name: 'Combo x25', desc: '25 tool calls in a row without a failure', goal: 25, value: (s, ses) => (ses ? ses.combo : 0) },
-  { id: 'streak-3', name: 'Dedicated', desc: 'Play 3 days in a row', goal: 3, value: (s) => s.streak.count },
-  { id: 'streak-7', name: 'Obsessed', desc: 'Play 7 days in a row', goal: 7, value: (s) => s.streak.count },
+  { id: 'combo-50', name: 'Unstoppable', desc: '50 tool calls in a row without a failure', goal: 50, value: (s, ses) => (ses ? ses.combo || 0 : 0) },
+  { id: 'combo-100', name: 'Godlike', desc: '100 tool calls in a row without a failure', goal: 100, value: (s, ses) => (ses ? ses.combo || 0 : 0) },
+  // streaks
+  { id: 'streak-3', name: 'Dedicated', desc: 'Play 3 days in a row', goal: 3, value: streakOf },
+  { id: 'streak-7', name: 'Obsessed', desc: 'Play 7 days in a row', goal: 7, value: streakOf },
+  { id: 'streak-14', name: 'Devoted', desc: 'Play 14 days in a row', goal: 14, value: streakOf },
+  { id: 'streak-30', name: 'Monthly Ritual', desc: 'Play 30 days in a row', goal: 30, value: streakOf },
+  { id: 'streak-100', name: 'Centennial', desc: 'Play 100 days in a row', goal: 100, value: streakOf },
+  // levels
+  { id: 'lvl-5', name: 'Rising Star', desc: 'Reach level 5', goal: 5, value: (s) => levelFor(s.xp || 0) },
   { id: 'lvl-10', name: 'Double Digits', desc: 'Reach level 10', goal: 10, value: (s) => levelFor(s.xp) },
+  { id: 'lvl-20', name: 'Twenty-Sided', desc: 'Reach level 20', goal: 20, value: (s) => levelFor(s.xp || 0) },
+  { id: 'lvl-30', name: 'Ascended', desc: 'Reach level 30', goal: 30, value: (s) => levelFor(s.xp || 0) },
+  // tokens
+  { id: 'tokens-100k', name: 'Wordsmith', desc: 'Claude writes 100,000 output tokens for you', goal: 1e5, value: (s) => ((s.tokens || {}).output || 0) },
+  { id: 'tokens-1m', name: 'Epic Poet', desc: 'Claude writes 1,000,000 output tokens for you', goal: 1e6, value: (s) => ((s.tokens || {}).output || 0) },
+  { id: 'tokens-10m', name: 'Library of Babel', desc: 'Claude writes 10,000,000 output tokens for you', goal: 1e7, value: (s) => ((s.tokens || {}).output || 0) },
+  // projects
+  { id: 'projects-3', name: 'Wanderer', desc: 'Adventure in 3 different projects', goal: 3, value: (s) => Object.keys(s.projects || {}).length },
+  { id: 'projects-10', name: 'Cartographer', desc: 'Adventure in 10 different projects', goal: 10, value: (s) => Object.keys(s.projects || {}).length },
+  { id: 'projects-25', name: 'World Walker', desc: 'Adventure in 25 different projects', goal: 25, value: (s) => Object.keys(s.projects || {}).length },
+  // battle
+  { id: 'kills-100', name: 'Monster Hunter', desc: 'Slay 100 monsters', goal: 100, value: (s) => gameOf(s).kills || 0 },
+  { id: 'kills-1000', name: 'Exterminator', desc: 'Slay 1,000 monsters', goal: 1000, value: (s) => gameOf(s).kills || 0 },
+  { id: 'wave-10', name: 'Wave Rider', desc: 'Reach wave 10', goal: 10, value: (s) => gameOf(s).bestWave || 0 },
+  { id: 'boss-1', name: 'Giant Slayer', desc: 'Defeat a boss', goal: 1, value: (s) => gameOf(s).bosses || 0 },
+  { id: 'boss-10', name: 'Boss Rush', desc: 'Defeat 10 bosses', goal: 10, value: (s) => gameOf(s).bosses || 0 },
+  // gold
+  { id: 'gold-500', name: 'Coin Purse', desc: 'Hold 500 gold at once', goal: 500, value: (s) => gameOf(s).gold || 0 },
+  { id: 'gold-5000', name: 'Dragon Hoard', desc: 'Hold 5,000 gold at once', goal: 5000, value: (s) => gameOf(s).gold || 0 },
+  // heroes
+  { id: 'heroes-2', name: 'Alter Ego', desc: 'Create a second hero', goal: 2, value: heroCount },
+  { id: 'heroes-5', name: 'Hall of Heroes', desc: 'Create 5 heroes', goal: 5, value: heroCount },
+  // secret: judged on the quest that just ended
+  { id: 'night-owl', name: 'Night Owl', desc: 'Finish a quest between midnight and 4 am', goal: 1, secret: true, value: (s, ses) => (justWon(ses) && wonAt(ses).getHours() < 4 ? 1 : 0) },
+  { id: 'early-bird', name: 'Early Bird', desc: 'Finish a quest between 5 and 7 am', goal: 1, secret: true, value: (s, ses) => (justWon(ses) && [5, 6].includes(wonAt(ses).getHours()) ? 1 : 0) },
+  { id: 'weekend', name: 'Weekend Warrior', desc: 'Finish a quest on a Saturday or Sunday', goal: 1, secret: true, value: (s, ses) => (justWon(ses) && [0, 6].includes(wonAt(ses).getDay()) ? 1 : 0) },
+  { id: 'marathon', name: 'Marathon', desc: 'Finish a quest that took 30 minutes or more', goal: 30, secret: true, value: (s, ses) => (justWon(ses) && ses.turn && ses.turn.start ? Math.floor((ses.since - ses.turn.start) / 60000) : 0) },
+  { id: 'scar-tissue', name: 'Scar Tissue', desc: 'Finish a quest after 3 or more failures', goal: 3, secret: true, value: (s, ses) => (justWon(ses) && ses.turn ? ses.turn.fails || 0 : 0) },
+  { id: 'untouchable', name: 'Untouchable', desc: 'Finish a quest of 20+ tool calls without a failure', goal: 20, secret: true, value: (s, ses) => (justWon(ses) && ses.turn && !ses.turn.fails ? turnTools(ses) : 0) },
 ];
 // Returns newly unlocked achievements and records them in state.
 function unlock(state, ses) {

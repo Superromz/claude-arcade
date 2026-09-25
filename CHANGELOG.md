@@ -7,6 +7,8 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Added
+- **Bounties:** 3 daily and 2 weekly challenges that pay gold (and sometimes buffs) for real Claude work. New Bounties tab.
+- 45 new achievements (58 in all, including secret ones) and titles up to level 32, with three times more message variety.
 - **Guild:** finished agents can ask to join; recruit up to 12, take 3 into battle, and level them up. New Guild tab.
 - 12 bosses (3 per biome) that rotate without repeats, plus rematches with earlier bosses, and 8 new monsters.
 

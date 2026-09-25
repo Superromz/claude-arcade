@@ -26,6 +26,9 @@ const { openRoster, rosterFrame, rosterKey } = require('./roster');
 const { shopTab, shopKey } = require('./shop');
 const { projectsTab } = require('./projects');
 const { guildTab, guildKey } = require('./guild');
+const { bountiesTab, bountiesKey } = require('./bounties');
+// Tab bodies by name, so TABS order can change freely.
+const TAB_FN = { Hero: heroTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
 const { applyOverlay } = require('./celebrate');
 const { sectionHeader } = require('./panels');
 const HD = require('./hd');
@@ -60,7 +63,7 @@ function frame(cols, rows) {
     }
   } else {
     ui.layout = null;
-    const body = [heroTab, partyTab, guildTab, trophiesTab, shopTab, projectsTab][ui.tab - 1](d, pal, W, bodyH).slice(0, bodyH);
+    const body = TAB_FN[TABS[ui.tab]](d, pal, W, bodyH).slice(0, bodyH);
     while (body.length < bodyH) body.push(panelLine(W, pal.panel, []));
     out.push(...body);
   }
@@ -69,6 +72,8 @@ function frame(cols, rows) {
   ui.hotbarRow = out.length;
   const keys = TABS[ui.tab] === 'Shop'
     ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    : TABS[ui.tab] === 'Bounties'
+    ? [['←→↑↓', 'select'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Guild'
     ? [['↑↓←→', 'select'], ['a', 'accept'], ['x', 'dismiss / release'], ['enter', 'fight / rest'], ['tab', 'view'], ['q', 'quit']]
     : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']];
@@ -120,6 +125,14 @@ function toggleHD() {
   } else {
     HD.state.on = true; cfg.hd = true;
     presenter = presenter || new HD.Presenter(process.stdout);
+    // Started without HD: measure the cell size now (replies also reach onKey, which ignores them).
+    if (HD.state.source === 'default') {
+      HD.state.source = 'probing';
+      HD.probe(process.stdin, process.stdout, 300, { keep: true }).then((p) => {
+        if (p.cw >= 4 && p.ch >= 8) Object.assign(HD.state, { cw: p.cw, ch: p.ch, source: p.source });
+        else HD.state.source = 'fallback';
+      });
+    }
   }
   L.saveConfig(cfg);
   ui.prev = [];
@@ -137,6 +150,7 @@ function onKey(key) {
   if (key === 'q' || key === '\x1b') return quit();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Guild' && key !== '\t' && key !== 'q' && guildKey(key, d)) return render(true);
+  if (TABS[ui.tab] === 'Bounties' && key !== '\t' && key !== 'q' && bountiesKey(key, d)) return render(true);
   if (/^[1-6]$/.test(key)) playerCast(d, Number(key) - 1);
   if (key === ' ') playerCast(d, 0);
   if (key === 'w' && !aliveMonsters().length) { ui.battle.practice = true; spawnWave(ui.sceneW || 200, Math.floor(ui.heroY + 24), d.lvl); }
@@ -187,7 +201,7 @@ function saveProgress() {
     L.withLock(() => {
       const st = L.loadState();
       if (ui.xpPending) { st.xp += ui.xpPending; st.battleXp = (st.battleXp || 0) + ui.xpPending; ui.xpPending = 0; }
-      st.game = { ...(st.game || {}), gold: ui.battle.gold, kills: ui.battle.kills, bestWave: Math.max((st.game || {}).bestWave || 0, ui.battle.wave) };
+      st.game = { ...(st.game || {}), bosses: Math.max((st.game || {}).bosses || 0, ui.battle.bosses || 0), gold: ui.battle.gold, kills: ui.battle.kills, bestWave: Math.max((st.game || {}).bestWave || 0, ui.battle.wave) };
       L.saveState(st);
     });
   } catch {}
@@ -254,7 +268,7 @@ function approvalKey(key) {
 // Load the active hero's banked gold and kills and reset the battlefield.
 function enterGame() {
   const g = L.loadState().game || {};
-  Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, lastEventT: Date.now() });
+  Object.assign(ui.battle, { monsters: [], shots: [], bolts: [], coins: [], wave: 0, practice: false, waveXp: 0, gold: g.gold || 0, kills: g.kills || 0, bosses: g.bosses || 0, lastEventT: Date.now() });
   ui.xpPending = 0;
   ui.screen = 'game';
 }
@@ -295,7 +309,7 @@ if (process.argv.includes('--hd-test')) {
     const det = HD.detect(process.env, L.loadConfig());
     const p = await HD.probe(process.stdin, out);
     const img = HD.testImage(96);
-    const cw = p.cw || 8, ch = p.ch || 16, c = Math.max(4, Math.round(96 / cw)), r = Math.max(2, Math.round(96 / ch));
+    const cw = p.cw || 8, ch = p.ch || 17, c = Math.max(4, Math.round(96 / cw)), r = Math.max(2, Math.round(96 / ch));
     out.write(`\n${'\n'.repeat(r)}${ESC}${r}A\r` + HD.kittyTransmit(img.rgba, img.w, img.h, { id: 7399, cols: c, rows: r }) + `${ESC}${r}B\r\n`);
     console.log('Do you see a colored gradient square above? If yes, HD mode works in this terminal.');
     console.log('');

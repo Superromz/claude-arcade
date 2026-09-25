@@ -49,9 +49,10 @@ it.
 | 2 | Hero | Portrait, stats, XP, tokens, gold, kills, spellbook and your "Deeds" |
 | 3 | Party | Your companions and recent adventures |
 | 4 | [Guild](Guild) | Recruit finished agents as permanent companions |
-| 5 | Trophies | Achievements with progress bars |
-| 6 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
-| 7 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
+| 5 | [Bounties](Bounties) | Daily and weekly challenges; Enter claims a finished one |
+| 6 | Trophies | Achievements with progress bars |
+| 7 | [Shop](Shop) | Cosmetics and battle buffs to buy with gold |
+| 8 | Projects | Your stats per project. See [Project Stats](Project-Stats) |
 
 Switch tabs with `tab`, `←` `→`, or a click on the tab name. The number keys are the hotbar, not tab
 shortcuts.
