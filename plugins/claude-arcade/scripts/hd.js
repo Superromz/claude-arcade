@@ -26,9 +26,12 @@ function detect(env = process.env, cfg = {}) {
   if (cfg && cfg.hd === true) return { on: true, why: 'config' };
   if (cfg && cfg.hd === false) return { on: false, why: 'config' };
   const tp = String(env.TERM_PROGRAM || ''), term = String(env.TERM || '');
-  const auto = tp === 'WarpTerminal' || !!env.KITTY_WINDOW_ID || term === 'xterm-kitty' ||
+  const capable = tp === 'WarpTerminal' || !!env.KITTY_WINDOW_ID || term === 'xterm-kitty' ||
     tp === 'WezTerm' || /ghostty/i.test(tp) || /ghostty/i.test(term);
-  return { on: auto, why: auto ? `auto (${tp || term || 'kitty'})` : 'auto' };
+  // On Windows the console layer can drop image escapes, so HD waits for an
+  // explicit opt-in there (after `arcade --hd-test` shows the test square).
+  if (capable && process.platform === 'win32') return { on: false, why: 'Windows: opt in with g or /claude-arcade:toggle hd after --hd-test' };
+  return { on: capable, why: capable ? `auto (${tp || term || 'kitty'})` : 'auto' };
 }
 
 // Ask the terminal for its cell size (CSI 16 t, else CSI 14 t / window size)

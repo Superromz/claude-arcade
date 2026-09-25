@@ -76,7 +76,7 @@ function frame(cols, rows) {
     ? [['←→↑↓', 'select'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Guild'
     ? [['↑↓←→', 'select'], ['a', 'accept'], ['x', 'dismiss / release'], ['enter', 'fight / rest'], ['tab', 'view'], ['q', 'quit']]
-    : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['p', sess], ['q', 'quit']];
+    : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['g', 'HD'], ['p', sess], ['q', 'quit']];
   out.push(footer(pal, W, keys));
   return applyOverlay(out, d, pal, W, rows);
 }
@@ -148,6 +148,7 @@ function onKey(key) {
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (key === 'q' || key === '\x1b') return quit();
+  if (key === 'g') return toggleHD();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Guild' && key !== '\t' && key !== 'q' && guildKey(key, d)) return render(true);
   if (TABS[ui.tab] === 'Bounties' && key !== '\t' && key !== 'q' && bountiesKey(key, d)) return render(true);
@@ -299,7 +300,7 @@ function rosterAction(a, d) {
 function quit() {
   saveProgress();
   try { require('fs').unlinkSync(L.HEARTBEAT); } catch {}
-  process.stdout.write(`${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
+  process.stdout.write(`${presenter ? presenter.deleteAll() : ''}${RESET}${ESC}?1000l${ESC}?1006l${ESC}?25h${ESC}?1049l`);
   process.exit(0);
 }
 

@@ -12,6 +12,7 @@
 - [Companions](Companions)
 - [Guild](Guild)
 - [Bounties](Bounties)
+- [HD Graphics](HD-Graphics)
 - [Progression and XP](Progression-and-XP)
 - [Biomes and Themes](Biomes-and-Themes)
 - [Status Line and Toasts](Status-Line-and-Toasts)

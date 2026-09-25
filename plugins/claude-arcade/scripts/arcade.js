@@ -180,7 +180,8 @@ function projectTable(s) {
 
 function toggle(key) {
   const cfg = L.loadConfig();
-  if (!['toasts', 'ascii', 'approvals'].includes(key)) { console.log('Toggle one of: toasts, ascii, approvals'); process.exit(1); }
+  if (!['toasts', 'ascii', 'approvals', 'hd'].includes(key)) { console.log('Toggle one of: toasts, ascii, approvals, hd'); process.exit(1); }
+  if (key === 'hd') { const on = require('./hd').detect({ ...process.env, ARCADE_HD: '' }, cfg).on; cfg.hd = !on; L.saveConfig(cfg); return console.log(`HD graphics are now ${cfg.hd ? 'on' : 'off'}. Restart the game pane (or press g in it). Check support first with: arcade --hd-test`); }
   if (key === 'approvals') { cfg.approveInGame = cfg.approveInGame === false; L.saveConfig(cfg); return console.log(`In-game approvals are now ${cfg.approveInGame ? 'on' : 'off'}.`); }
   cfg[key] = !cfg[key];
   L.saveConfig(cfg);

@@ -7,6 +7,7 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Added
+- **HD graphics:** in Kitty-graphics terminals (Warp, kitty, WezTerm, Ghostty) the battle scene can be drawn as a real image with finer pixels, smooth diagonals and glow. Check with `arcade --hd-test`, then press `g` in the game or run `/claude-arcade:toggle hd`. On by default on macOS/Linux; opt-in on Windows.
 - **Bounties:** 3 daily and 2 weekly challenges that pay gold (and sometimes buffs) for real Claude work. New Bounties tab.
 - 45 new achievements (58 in all, including secret ones) and titles up to level 32, with three times more message variety.
 - **Guild:** finished agents can ask to join; recruit up to 12, take 3 into battle, and level them up. New Guild tab.
