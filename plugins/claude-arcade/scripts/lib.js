@@ -28,6 +28,45 @@ function readStdin() {
   try { return JSON.parse(fs.readFileSync(0, 'utf8').replace(/^﻿/, '') || '{}'); } catch { return {}; }
 }
 
+// Hooks run in the background and can overlap, so read-modify-write of
+// state.json happens under a mkdir lock (atomic on every OS).
+const LOCK_DIR = path.join(HOME, 'state.lock');
+const sleep = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+function withLock(fn) {
+  fs.mkdirSync(HOME, { recursive: true });
+  const deadline = Date.now() + 1500;
+  for (;;) {
+    try { fs.mkdirSync(LOCK_DIR); break; } catch {
+      try { if (Date.now() - fs.statSync(LOCK_DIR).mtimeMs > 3000) fs.rmdirSync(LOCK_DIR); } catch {}
+      if (Date.now() > deadline) break; // give up waiting rather than stall Claude
+      sleep(15);
+    }
+  }
+  try { return fn(); } finally { try { fs.rmdirSync(LOCK_DIR); } catch {} }
+}
+
+// Append-only quest log the game pane tails. Trimmed when it grows.
+const EVENTS_FILE = path.join(HOME, 'events.jsonl');
+
+function logEvent(ev) {
+  try {
+    fs.mkdirSync(HOME, { recursive: true });
+    fs.appendFileSync(EVENTS_FILE, JSON.stringify({ t: Date.now(), ...ev }) + '\n');
+    if (fs.statSync(EVENTS_FILE).size > 256 * 1024) {
+      const lines = fs.readFileSync(EVENTS_FILE, 'utf8').trim().split('\n').slice(-400);
+      fs.writeFileSync(EVENTS_FILE, lines.join('\n') + '\n');
+    }
+  } catch {}
+}
+
+function readEvents(n = 50) {
+  try {
+    return fs.readFileSync(EVENTS_FILE, 'utf8').trim().split('\n').slice(-n)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  } catch { return []; }
+}
+
 function defaultState() {
   return { xp: 0, quests: 0, tools: {}, achievements: [], sessions: {}, streak: { day: null, count: 0 } };
 }
@@ -67,6 +106,18 @@ const c = {
   magenta: `${ESC}95m`, cyan: `${ESC}96m`, white: `${ESC}97m`, gray: `${ESC}90m`,
 };
 const paint = (color, s) => `${c[color] || ''}${s}${c.reset}`;
+
+// Approximate terminal cell width: wide emoji count 2, joiners/selectors 0.
+function visWidth(s) {
+  let w = 0;
+  for (const ch of String(s).replace(/\x1b\[[0-9;]*m/g, '')) {
+    const cp = ch.codePointAt(0);
+    if (cp === 0xfe0f || cp === 0x200d || (cp >= 0x300 && cp < 0x370)) continue;
+    w += cp >= 0x1f000 || (cp >= 0x2600 && cp < 0x27c0 && /\p{Extended_Pictographic}/u.test(ch)) || (cp >= 0x1100 && cp <= 0x115f) || (cp >= 0x2e80 && cp <= 0xa4cf) ? 2 : 1;
+  }
+  return w;
+}
+const padVis = (s, w) => s + ' '.repeat(Math.max(0, w - visWidth(s)));
 
 function bar(ratio, width, full = '█', empty = '░') {
   const n = Math.max(0, Math.min(width, Math.round(ratio * width)));
@@ -159,8 +210,8 @@ const THEMES = {
 
 function theme(cfg) { return THEMES[cfg.theme] || THEMES.rpg; }
 
-// A new title every two levels.
-function titleFor(t, lvl) { return t.titles[Math.min(t.titles.length - 1, Math.floor((lvl - 1) / 2))]; }
+// A new title every level until the list runs out.
+function titleFor(t, lvl) { return t.titles[Math.min(t.titles.length - 1, lvl - 1)]; }
 
 // ---------- tools -> modes / xp ----------
 
@@ -194,32 +245,33 @@ function describeTool(name, input = {}) {
 
 // ---------- achievements ----------
 
+// value() is progress toward goal, so the game pane can draw progress bars.
+const tool = (k) => (s) => s.tools[k] || 0;
 const ACHIEVEMENTS = [
-  { id: 'first-quest', name: 'First Blood', desc: 'Complete your first turn', test: (s) => s.quests >= 1 },
-  { id: 'quests-100', name: 'Centurion', desc: 'Complete 100 turns', test: (s) => s.quests >= 100 },
-  { id: 'forge-50', name: 'Blacksmith', desc: 'Make 50 edits', test: (s) => (s.tools.editing || 0) >= 50 },
-  { id: 'forge-500', name: 'Master Smith', desc: 'Make 500 edits', test: (s) => (s.tools.editing || 0) >= 500 },
-  { id: 'cast-100', name: 'Spellslinger', desc: 'Run 100 commands', test: (s) => (s.tools.running || 0) >= 100 },
-  { id: 'scout-200', name: 'Pathfinder', desc: 'Read or search 200 times', test: (s) => (s.tools.reading || 0) + (s.tools.searching || 0) >= 200 },
-  { id: 'summon-1', name: 'Party Up', desc: 'Summon your first subagent', test: (s) => (s.tools.summoning || 0) >= 1 },
-  { id: 'summon-25', name: 'Guild Master', desc: 'Summon 25 subagents', test: (s) => (s.tools.summoning || 0) >= 25 },
-  { id: 'full-party', name: 'Full Party', desc: 'Have 3 subagents running at once', test: (s, ses) => ses && Object.keys(ses.party).length >= 3 },
-  { id: 'combo-25', name: 'Combo x25', desc: '25 tool calls in one turn without a failure', test: (s, ses) => ses && ses.combo >= 25 },
-  { id: 'streak-3', name: 'Dedicated', desc: 'Play 3 days in a row', test: (s) => s.streak.count >= 3 },
-  { id: 'streak-7', name: 'Obsessed', desc: 'Play 7 days in a row', test: (s) => s.streak.count >= 7 },
-  { id: 'lvl-10', name: 'Double Digits', desc: 'Reach level 10', test: (s) => levelFor(s.xp) >= 10 },
+  { id: 'first-quest', name: 'First Blood', desc: 'Complete your first turn', goal: 1, value: (s) => s.quests },
+  { id: 'quests-100', name: 'Centurion', desc: 'Complete 100 turns', goal: 100, value: (s) => s.quests },
+  { id: 'forge-50', name: 'Blacksmith', desc: 'Make 50 edits', goal: 50, value: tool('editing') },
+  { id: 'forge-500', name: 'Master Smith', desc: 'Make 500 edits', goal: 500, value: tool('editing') },
+  { id: 'cast-100', name: 'Spellslinger', desc: 'Run 100 commands', goal: 100, value: tool('running') },
+  { id: 'scout-200', name: 'Pathfinder', desc: 'Read or search 200 times', goal: 200, value: (s) => (s.tools.reading || 0) + (s.tools.searching || 0) },
+  { id: 'summon-1', name: 'Party Up', desc: 'Summon your first subagent', goal: 1, value: tool('summoning') },
+  { id: 'summon-25', name: 'Guild Master', desc: 'Summon 25 subagents', goal: 25, value: tool('summoning') },
+  { id: 'full-party', name: 'Full Party', desc: 'Have 3 subagents running at once', goal: 3, value: (s, ses) => (ses ? Object.keys(ses.party).length : 0) },
+  { id: 'combo-25', name: 'Combo x25', desc: '25 tool calls in a row without a failure', goal: 25, value: (s, ses) => (ses ? ses.combo : 0) },
+  { id: 'streak-3', name: 'Dedicated', desc: 'Play 3 days in a row', goal: 3, value: (s) => s.streak.count },
+  { id: 'streak-7', name: 'Obsessed', desc: 'Play 7 days in a row', goal: 7, value: (s) => s.streak.count },
+  { id: 'lvl-10', name: 'Double Digits', desc: 'Reach level 10', goal: 10, value: (s) => levelFor(s.xp) },
 ];
-
 // Returns newly unlocked achievements and records them in state.
 function unlock(state, ses) {
   const got = new Set(state.achievements);
-  const fresh = ACHIEVEMENTS.filter((a) => !got.has(a.id) && a.test(state, ses));
+  const fresh = ACHIEVEMENTS.filter((a) => !got.has(a.id) && a.value(state, ses) >= a.goal);
   for (const a of fresh) state.achievements.push(a.id);
   return fresh;
 }
 
 module.exports = {
-  HOME, STATE_FILE, CONFIG_FILE, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar,
+  HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
   readJSON, writeJSON, readStdin, loadState, saveState, loadConfig, saveConfig,
   session, pruneSessions, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,
 };

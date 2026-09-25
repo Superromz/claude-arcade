@@ -11,6 +11,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 
 const SCRIPTS = path.join(__dirname, '..', 'plugins', 'claude-arcade', 'scripts');
+const { visWidth } = require(path.join(SCRIPTS, 'lib.js'));
 const home = fs.mkdtempSync(path.join(os.tmpdir(), 'arcade-'));
 const env = { ...process.env, HOME: home, USERPROFILE: home };
 
@@ -43,7 +44,7 @@ test('pre tool use sets the mode shown in the HUD', () => {
 });
 
 test('subagents join and leave the party', () => {
-  assert.match(toast(hook('SubagentStart', { agent_id: 'a1', agent_type: 'Explore' })), /Explore joined your party/);
+  assert.match(toast(hook('SubagentStart', { agent_id: 'a1', agent_type: 'Explore' })), /Ranger/);
   assert.deepStrictEqual(Object.keys(state().sessions.s1.party), ['a1']);
   assert.match(run('statusline.js', { session_id: 's1' }), /party 1/);
   hook('SubagentStop', { agent_id: 'a1' });
@@ -61,8 +62,8 @@ test('stop completes the quest, levels up and unlocks achievements', () => {
   let toasts = '';
   for (let i = 0; i < 5; i++) toasts += toast(hook('PostToolUse', { tool_name: 'Edit' })); // push past 100 XP
   const msg = toast(hook('Stop'));
-  assert.match(toasts + msg, /LEVEL UP! Lv 2/);
-  assert.match(msg, /Quest complete! \+\d+ XP/);
+  assert.match(toasts + msg, /Lv 2/);
+  assert.match(msg, /Forged \d+ files.*\+\d+ XP in \d+s/);
   assert.match(msg, /First Blood/);
   assert.strictEqual(state().quests, 1);
 });
@@ -78,6 +79,33 @@ test('subagent rows render as party members', () => {
 
 test('hooks never fail on garbage input', () => {
   execFileSync(process.execPath, [path.join(SCRIPTS, 'hook.js')], { input: 'not json', env });
+});
+
+test('game pane renders every tab at a fixed width', () => {
+  const strip = (s) => s.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');
+  for (const tab of ['1', '2', '3', '4']) {
+    const out = execFileSync(process.execPath, [path.join(SCRIPTS, 'game.js'), '--snapshot', tab], {
+      env: { ...env, COLUMNS: '90', LINES: '26' }, encoding: 'utf8',
+    });
+    const lines = strip(out).trimEnd().split('\n');
+    assert.strictEqual(lines.length, 26, `tab ${tab} height`);
+    assert.match(lines[0], /CLAUDE ARCADE/);
+    for (const l of lines) assert.strictEqual(visWidth(l), 90, `tab ${tab}: "${l}"`);
+  }
+});
+
+test('quest log records what happened', () => {
+  const log = fs.readFileSync(path.join(home, '.claude', 'arcade', 'events.jsonl'), 'utf8');
+  assert.match(log, /"kind":"summon"/);
+  assert.match(log, /"kind":"hurt"/);
+  assert.match(log, /"kind":"quest"/);
+});
+
+test('play prints a launch command outside Windows Terminal', () => {
+  const out = execFileSync(process.execPath, [path.join(SCRIPTS, 'arcade.js'), 'play'], {
+    env: { ...env, WT_SESSION: '' }, encoding: 'utf8',
+  });
+  assert.match(out, /game\.js/);
 });
 
 test('setup and uninstall round-trip user settings', () => {

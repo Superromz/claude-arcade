@@ -23,9 +23,13 @@ function main() {
   // Short-lived moods fall back to their resting state.
   if (mode === 'victory' && age > 8) mode = 'idle';
   if (mode === 'hurt' && age > 3) mode = 'thinking';
+  // A tool that has shown for over 30 minutes is a lost async update, not real work.
+  if (!['idle', 'victory', 'waiting'].includes(mode) && age > 1800) mode = 'idle';
 
   const m = t.modes[mode] || t.modes.thinking;
-  const frame = m.frames[Math.floor(now / 1000) % m.frames.length];
+  // Pad every frame to the widest one in the theme so text never jumps.
+  const spriteW = Math.max(...Object.values(t.modes).flatMap((x) => x.frames.map(L.visWidth)));
+  const frame = L.padVis(m.frames[Math.floor(now / 1000) % m.frames.length], spriteW);
   const color = { idle: 'gray', victory: 'yellow', hurt: 'red', waiting: 'magenta', summoning: 'cyan', editing: 'yellow', running: 'green' }[mode] || 'blue';
 
   // Row 1: what the hero is doing right now.
@@ -33,7 +37,8 @@ function main() {
   const detail = ses.detail && mode !== 'victory' ? paint('white', ` ${ses.detail}`) : '';
   const timer = busy && age > 1 ? paint('gray', ` ${fmtTime(age)}`) : '';
   const partyN = Object.keys(ses.party || {}).length;
-  const party = partyN ? paint('cyan', `   ${t.party} ${partyN}${ascii ? '' : ' ' + partyIcons(partyN, cfg.theme)}`) : '';
+  const icons = Object.values(ses.party || {}).map((p) => p.icon).filter(Boolean).slice(0, 5).join('');
+  const party = partyN ? paint('cyan', `   ${t.party} ${partyN}${ascii || !icons ? '' : ' ' + icons}`) : '';
   const row1 = `${paint(color, frame)}  ${paint('bold', paint(color, m.verb + (busy ? '…' : '')))}${detail}${timer}${party}`;
 
   // Row 2: character sheet.
@@ -56,11 +61,6 @@ function main() {
   if (input.model && input.model.display_name) parts.push(paint('gray', input.model.display_name));
 
   process.stdout.write(`${row1}\n${parts.join('  ')}`);
-}
-
-function partyIcons(n, themeName) {
-  const icon = { rpg: ['🧝', '🧙', '🛡', '🏹', '🐉'], space: ['🛸', '🛸', '🛸', '🛸', '🛸'] }[themeName] || ['🧝'];
-  return Array.from({ length: Math.min(n, 5) }, (_, i) => icon[i % icon.length]).join('') + (n > 5 ? '+' : '');
 }
 
 function fmt(n) { return Math.round(n).toLocaleString('en-US'); }

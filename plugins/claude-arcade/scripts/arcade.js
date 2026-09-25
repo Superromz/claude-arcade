@@ -3,6 +3,7 @@
 //   arcade.js setup [theme]   install HUD status line + themed spinner into ~/.claude/settings.json
 //   arcade.js uninstall       restore the settings that setup replaced
 //   arcade.js theme <name>    switch theme (rpg | space | retro)
+//   arcade.js play            open the game pane (split pane where the terminal allows it)
 //   arcade.js stats           print the hero sheet
 //   arcade.js toggle <toasts|ascii>
 //   arcade.js reset           wipe XP and achievements
@@ -23,13 +24,17 @@ function applySpinner(settings, t) {
   settings.spinnerTipsOverride = { tips: t.tips, excludeDefault: false };
 }
 
+// Copy scripts to a stable path: the plugin dir changes on every update.
+function installScripts() {
+  fs.mkdirSync(BIN, { recursive: true });
+  for (const f of ['lib.js', 'messages.js', 'statusline.js', 'subagents.js', 'game.js']) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
+}
+
 function setup(themeName) {
   const cfg = L.loadConfig();
   if (themeName) setTheme(cfg, themeName);
 
-  // Copy scripts to a stable path: the plugin dir changes on every update.
-  fs.mkdirSync(BIN, { recursive: true });
-  for (const f of ['lib.js', 'statusline.js', 'subagents.js']) fs.copyFileSync(path.join(__dirname, f), path.join(BIN, f));
+  installScripts();
 
   const settings = L.readJSON(SETTINGS, {});
   if (!fs.existsSync(BACKUP)) {
@@ -43,8 +48,32 @@ function setup(themeName) {
   L.saveConfig(cfg);
   console.log(`Claude Arcade installed with the "${L.theme(cfg).name}" theme.`);
   console.log(`Updated ${SETTINGS} (previous values saved to ${BACKUP}).`);
+  console.log(`Game pane: run /claude-arcade:play, or in any terminal pane: ${node('game.js')}`);
 }
 
+// Open the game next to Claude. Windows Terminal can split itself; other
+// terminals (Warp, iTerm, VS Code…) get the command on the clipboard.
+function play() {
+  const { spawn, execSync } = require('child_process');
+  const cmd = node('game.js');
+  installScripts();
+  if (process.env.WT_SESSION) {
+    spawn('wt.exe', ['-w', '0', 'sp', '-V', '-s', '0.45', 'node', path.join(BIN, 'game.js')], { detached: true, stdio: 'ignore' }).unref();
+    console.log('Opened the game in a Windows Terminal split pane.');
+    return;
+  }
+  let copied = false;
+  try {
+    const clip = process.platform === 'win32' ? 'clip' : process.platform === 'darwin' ? 'pbcopy' : 'xclip -selection clipboard';
+    execSync(clip, { input: cmd, stdio: ['pipe', 'ignore', 'ignore'] });
+    copied = true;
+  } catch {}
+  const split = process.env.TERM_PROGRAM === 'WarpTerminal'
+    ? (process.platform === 'darwin' ? 'Cmd+D' : 'Ctrl+Shift+D') + ' in Warp'
+    : 'your terminal\'s split-pane shortcut';
+  console.log(`Split the window with ${split}, then paste and run${copied ? ' (already copied to your clipboard)' : ''}:`);
+  console.log(`  ${cmd}`);
+}
 function uninstall() {
   const settings = L.readJSON(SETTINGS, {});
   const backup = L.readJSON(BACKUP, {});
@@ -110,5 +139,5 @@ function reset() {
 }
 
 const [cmd, arg] = process.argv.slice(2);
-const commands = { setup: () => setup(arg), uninstall, theme: () => theme(arg), stats, toggle: () => toggle(arg), reset };
-(commands[cmd] || (() => console.log('Usage: arcade.js setup|uninstall|theme <name>|stats|toggle <toasts|ascii>|reset')))();
+const commands = { setup: () => setup(arg), play, uninstall, theme: () => theme(arg), stats, toggle: () => toggle(arg), reset };
+(commands[cmd] || (() => console.log('Usage: arcade.js setup|play|uninstall|theme <name>|stats|toggle <toasts|ascii>|reset')))();

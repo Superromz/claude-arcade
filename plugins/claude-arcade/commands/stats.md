@@ -2,4 +2,6 @@
 description: Show your Claude Arcade hero sheet - level, XP, stats and achievements
 allowed-tools: Bash(node:*)
 ---
-Run `node "${CLAUDE_PLUGIN_ROOT}/scripts/arcade.js" stats` and show the output to the user verbatim inside a code block. Add nothing else.
+!`node "${CLAUDE_PLUGIN_ROOT}/scripts/arcade.js" stats`
+
+The command above already ran; don't run anything. Show its output verbatim in a code block and add nothing else.
