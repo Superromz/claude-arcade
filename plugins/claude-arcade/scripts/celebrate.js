@@ -159,7 +159,7 @@ function levelUpSpec(d, pal, from, to, age, dur) {
   for (const s of fresh.slice(0, 2)) {
     const icon = P ? P.spellIcon(s, d) : '*', col = P ? P.spellColor(s, pal) : pal.magic;
     const name = P ? P.spellName(s, d) : s.name;
-    lines.push([['New spell unlocked  ', pal.dim], [`${icon} ${name}`, col, true], [`  · key ${C.SPELLS.indexOf(s) + 1}`, pal.dim]]);
+    lines.push([['New spell unlocked  ', pal.dim], [`${icon} ${name}`, col, true], [(() => { try { const lo = require('./skills').loadout(ui.frameData || {}); const i = (lo || []).indexOf(s.id); return i >= 0 ? `  · key ${i + 1}` : '  · equip it on the Skills tab'; } catch { return ''; } })(), pal.dim]]);
   }
   if (!fresh.length) {
     const next = C.SPELLS.find((s) => s.lvl > to);

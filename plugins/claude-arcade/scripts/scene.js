@@ -273,7 +273,8 @@ function drawScene(pc, d, pal) {
 
   // Hero pose.
   let pose = 'stand', look = null, hop = false;
-  if (alerting) pose = 'alert';
+  if (ui.battle.ko) pose = 'sleep'; // knocked out: lie down until respawn
+  else if (alerting) pose = 'alert';
   else if (mode === 'victory') pose = 'victory';
   else if (mode === 'cheer' || mode === 'summoning') pose = 'cheer';
   else if (mode === 'hurt') pose = 'hurt';
@@ -333,7 +334,8 @@ function drawScene(pc, d, pal) {
   for (const m of ui.battle.monsters) SP.drawMonster(pc, m, t, { target: m === front });
   if (front && !front.boss) {
     const def = SP.MONSTERS[front.type];
-    const tag = `${def.name} Lv${front.lvl} · ${Math.max(0, front.hp)}/${front.max} HP · ${ui.battle.practice ? 'practice' : `${front.xp} XP`}`;
+    const aff = require('./monsters').affixLabel ? require('./monsters').affixLabel(front) : '';
+    const tag = `${aff ? aff + ' ' : ''}${def.name} Lv${front.lvl} · ${Math.max(0, front.hp)}/${front.max} HP · ${ui.battle.practice ? 'practice' : `${front.xp} XP`}`;
     const [fw] = SP.monsterSize(front), tw = textW(tag);
     pc.label(Math.max(0, Math.min(W - tw - 1, Math.round(front.x + fw / 2 - tw / 2))), Math.max(1, Math.floor((front.y - (front.boss ? 11 : 8)) / 2)), tag, [255, 236, 200], true);
   }
@@ -356,7 +358,8 @@ function drawScene(pc, d, pal) {
   if (ui.battle.flash > 0) { ui.battle.flash--; pc.px = pc.px.map((c) => X.mix(c, [255, 250, 230], 0.5)); }
   pc.px = pc.px.map((c, i) => { const v = ((i % W) / W - 0.5) * 2; return X.shade(c, 1 - 0.28 * v * v); });
   if (th === 'retro') pc.map((c) => { const l = (c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11) / 255; const q = Math.round(l * 5) / 5; return [10 + q * 40, 20 + q * 235, 10 + q * 60].map(X.clamp); });
-  pc.label(1, 0, ` ${ui.battle.practice ? 'PRACTICE ' : ''}WAVE ${ui.battle.wave} · ${ui.battle.kills} slain · ◉ ${ui.battle.gold} gold `, pal.gold);
+  { const b = ui.battle, bossUp = b.monsters.some((m) => m.boss && m.hp > 0);
+    pc.label(1, 0, ` ${b.practice ? 'PRACTICE ' : ''}${b.tier && !b.practice ? b.tier.label + ' · ' : ''}${b.ko ? 'KNOCKED OUT' : bossUp ? 'BOSS' : `WAVE ${b.wave}`} · ${b.kills} slain · ◉ ${b.gold} gold `, pal.gold); }
 }
 
 // Render at a logical resolution sized so the hero is ~40% of the scene height.

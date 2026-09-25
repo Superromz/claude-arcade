@@ -268,7 +268,8 @@ function lootTick(d) {
   } else if (lp.lastWave !== b.wave && lp.waveInfo && lp.waveInfo.wave === b.wave) {
     lp.lastWave = b.wave;
     const w = lp.waveInfo;
-    const { tier, q } = tierFor(waveScore({ wave: w.wave, bosses: w.bosses, lvl: d.lvl }), 'wave');
+    const tb = (ui.battle.tier && ui.battle.tier.loot) || 0; // 0 Normal … 8+ Abyss
+    const { tier, q } = tierFor(waveScore({ wave: w.wave, bosses: w.bosses, lvl: d.lvl }) + tb, 'wave');
     award({ kind: 'wave', tier, q, wave: w.wave, practice: w.practice }, d);
   }
 
@@ -281,7 +282,8 @@ function lootTick(d) {
   if (lp.pending && ((!b.finisher && !celebrating()) || ui.tick - lp.pending.t0 > 50)) {
     const p = lp.pending;
     lp.pending = null;
-    const { tier, q } = tierFor(questScore(p.turn, { end: p.end, bosses: lp.turnBosses, lvl: d.lvl }), 'quest');
+    const tbq = (ui.battle.tier && ui.battle.tier.loot) || 0;
+    const { tier, q } = tierFor(questScore(p.turn, { end: p.end, bosses: lp.turnBosses, lvl: d.lvl }) + tbq, 'quest');
     lp.turnBosses = 0;
     award({ kind: 'quest', tier, q }, d);
   }

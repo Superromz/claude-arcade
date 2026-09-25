@@ -7,6 +7,13 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Added
+- Every class learns new skills all the way to a Lv 75 ultimate and picks its own six-slot hotbar. The skill tree grows to 8 tiers with Awakened capstones.
+- Progressive difficulty: Normal, Veteran, Heroic, Mythic, then an endless Abyss, with monster affixes (armored, shielded, swift, regenerating, vampiric, splitting, enraging, resistances), a battle HP bar and harmless knockouts. Better loot at higher tiers; XP stays exactly the same.
+
+### Fixed
+- Combo XP bonus is capped; token XP is never counted twice for forked or resumed conversations; companions no longer slow fights down.
+
+### Added
 - **Shop:** 159 items (up from 42) with new kinds: trails, mounts, tents, banners, campfire colors and guild recruit outfits (shown at camp and on recruits). Daily Deals, 8 item sets with small damage or gold bonuses, and a Wardrobe for 3 saved outfits.
 
 ### Added

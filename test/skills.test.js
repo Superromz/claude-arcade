@@ -25,12 +25,15 @@ const CLASSES = Object.keys(C.CLASSES);
 const reset = (game = {}, xp = 0) => L.saveState({ ...L.loadState(), xp, game });
 const hero = (cls, lvl) => ({ hero: { cls }, lvl, state: L.loadState() });
 
-test('every class has its own kit: basic attack plus five skills at Lv 3/5/8/12/18', () => {
+test('every class has its own kit: basic attack plus eleven skills and a Lv 75 ultimate', () => {
   const ids = [];
   for (const cls of CLASSES) {
     const kit = C.kitFor(cls);
-    assert.strictEqual(kit.length, 6, cls);
-    assert.deepStrictEqual(kit.map((s) => s.lvl), [1, 3, 5, 8, 12, 18], cls);
+    assert.strictEqual(kit.length, 12, cls);
+    assert.deepStrictEqual(kit.map((s) => s.lvl), [1, 3, 5, 8, 12, 18, 25, 30, 40, 50, 60, 75], cls);
+    assert.ok(kit[11].ult, `${cls} ultimate`);
+    assert.ok(kit.filter((s) => s.def).length >= 1, `${cls} has a defensive skill`);
+    for (const s of kit) assert.ok(C.ELEMENTS.includes(s.el), `${s.id} element`);
     assert.strictEqual(kit[0].id, 'basic');
     assert.strictEqual(kit[0].name, C.BASIC_NAMES[cls]);
     ids.push(...kit.slice(1).map((s) => s.id));
@@ -164,8 +167,7 @@ test('the skill tree never grants XP', () => {
 });
 
 test('monster HP grows with level so fights stay a few seconds long', () => {
-  assert.strictEqual(B.hpScale(1), 1);
-  assert.ok(B.hpScale(4) > 1);
+  assert.ok(B.hpScale(4) > B.hpScale(1));
   assert.ok(B.hpScale(40) > B.hpScale(20));
 });
 
@@ -201,4 +203,54 @@ test('skillsKey moves, learns and respecs with a confirm', () => {
   assert.ok(S.skillsKey('y', d()));
   assert.deepStrictEqual(L.loadState().game.skills.nodes, {});
   assert.strictEqual(L.loadState().game.gold, 400);
+});
+
+test('the hotbar loadout defaults sensibly, saves, swaps and survives a respec', () => {
+  reset({ gold: 1000 });
+  ui.battle.gold = 1000;
+  // Low level: basic plus the first five skills (the locked ones preview).
+  assert.deepStrictEqual(S.loadout(hero('mage', 4)).map((s) => s.id), ['basic', 'fireball', 'frost', 'chain', 'meteor', 'starfall']);
+  // High level: basic plus the newest five known.
+  assert.deepStrictEqual(S.loadout(hero('mage', 60)).map((s) => s.id), ['basic', 'barrier', 'blizzard', 'orb', 'inferno', 'timewarp']);
+  assert.ok(!S.equip(hero('mage', 30), 1, 'cataclysm'), 'locked skills cannot be equipped');
+  assert.ok(S.equip(hero('mage', 60), 1, 'fireball'));
+  assert.strictEqual(L.loadState().game.skills.loadout[1], 'fireball');
+  assert.ok(S.equip(hero('mage', 60), 2, 'fireball')); // already equipped: the slots swap
+  const lo = L.loadState().game.skills.loadout;
+  assert.strictEqual(lo[2], 'fireball');
+  assert.strictEqual(lo[1], 'blizzard');
+  assert.strictEqual(new Set(lo).size, 6);
+  S.learn(hero('mage', 60), 0, 0);
+  assert.ok(S.respec(hero('mage', 60)));
+  assert.deepStrictEqual(L.loadState().game.skills.loadout, lo);
+  // The hotbar casts from the loadout slot.
+  assert.strictEqual(S.loadout(hero('mage', 60))[2].id, 'fireball');
+});
+
+test('the skill tree has 8 tiers with Awakened capstones at Lv 40', () => {
+  assert.deepStrictEqual(S.TIER_LVL, [1, 4, 8, 12, 16, 20, 28, 40]);
+  for (const cls of CLASSES) for (const br of S.treeFor(cls)) {
+    assert.strictEqual(br.nodes.length, 8);
+    assert.match(br.nodes[7].name, /^Awakened /);
+    assert.strictEqual(br.nodes[7].max, 1);
+  }
+  reset({ skills: { nodes: {} } });
+  assert.match(S.blocker(hero('knight', 30), 0, 7), /Needs level 40/);
+});
+
+test('the Skills & loadout view is exactly W wide and k toggles it', () => {
+  reset({});
+  ui.skills = { b: 0, n: 0, p: 0 };
+  assert.ok(S.skillsKey('k', hero('rogue', 50)));
+  for (const cls of CLASSES) for (const [W, h] of [[50, 10], [80, 18], [100, 24], [130, 30], [180, 40]]) {
+    ui.skills.k = 11; ui.skills.slot = 5;
+    const lines = S.skillsTab(hero(cls, 50), UI.rpg, W, h);
+    assert.ok(lines.length <= h);
+    for (const l of lines) assert.strictEqual(L.visWidth(l), W, `${cls} kit view ${W}x${h}`);
+  }
+  ui.skills.k = 1; ui.skills.slot = 3;
+  assert.ok(S.skillsKey('e', hero('rogue', 50)));
+  assert.strictEqual(S.loadout(hero('rogue', 50))[3].id, 'backstab');
+  assert.ok(S.skillsKey('k', hero('rogue', 50)));
+  assert.strictEqual(ui.skills.view, 'tree');
 });

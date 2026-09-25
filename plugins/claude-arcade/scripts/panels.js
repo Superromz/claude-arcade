@@ -164,6 +164,12 @@ const SPELL_ICON = {
   curse: '§', drain: '∞', imp: 'ж', shadowflame: '▲', doom: 'Ø',
   anthem: '♩', discord: '♯', echo: '∿', crescendo: '≋', encore: '★',
   backstab: '⌐', poison: '¡', smoke: '○', shadowstep: '⇥', deathmark: '×',
+  barrier: '◎', blizzard: '⁂', orb: '◌', inferno: 'Ψ', timewarp: 'θ', cataclysm: '※',
+  secondwind: '∽', explosive: '¤', frostvolley: '⋰', wolves: 'ω', stormarrow: '⇶', thousand: '⇊',
+  shieldwall: '▣', layhands: '±', consecrate: '⌂', groundslam: '⊥', wrath: 'Λ', divinestorm: '⊕',
+  darkpact: '◙', fear: 'Σ', firerain: '⋮', demon: 'Ю', soulrot: '∂', oblivion: '⊗',
+  lullaby: 'ƶ', hymn: '∮', riff: 'ϟ', drumline: '⁞', siren: 'ς', symphony: 'Ϡ',
+  vanish: '∅', fan: '⁑', garrote: '∩', bombs: '°', flurry: '≫', cuts: '⨯',
 };
 const SPELL_COLOR = {
   fireball: [255, 128, 56], frost: [130, 206, 255], chain: [255, 232, 110], meteor: [255, 96, 72], starfall: [206, 160, 255],
@@ -172,6 +178,12 @@ const SPELL_COLOR = {
   curse: [190, 110, 250], drain: [236, 80, 110], imp: [255, 130, 50], shadowflame: [170, 90, 255], doom: [150, 80, 220],
   anthem: [255, 200, 90], discord: [255, 110, 170], echo: [200, 170, 255], crescendo: [255, 170, 220], encore: [255, 214, 80],
   backstab: [230, 90, 90], poison: [130, 225, 90], smoke: [180, 180, 196], shadowstep: [120, 220, 200], deathmark: [240, 70, 80],
+  barrier: [170, 150, 255], blizzard: [180, 230, 255], orb: [255, 236, 110], inferno: [255, 110, 40], timewarp: [180, 220, 255], cataclysm: [200, 150, 255],
+  secondwind: [130, 220, 120], explosive: [255, 140, 50], frostvolley: [150, 225, 255], wolves: [190, 190, 200], stormarrow: [200, 220, 255], thousand: [220, 190, 130],
+  shieldwall: [140, 180, 255], layhands: [255, 236, 150], consecrate: [255, 226, 130], groundslam: [210, 190, 150], wrath: [255, 230, 150], divinestorm: [255, 230, 140],
+  darkpact: [150, 80, 230], fear: [170, 90, 240], firerain: [255, 120, 40], demon: [255, 90, 40], soulrot: [140, 200, 90], oblivion: [170, 90, 240],
+  lullaby: [200, 200, 255], hymn: [255, 220, 140], riff: [255, 236, 110], drumline: [230, 180, 120], siren: [255, 130, 200], symphony: [255, 214, 80],
+  vanish: [150, 150, 180], fan: [210, 214, 226], garrote: [220, 80, 80], bombs: [255, 150, 60], flurry: [230, 236, 250], cuts: [150, 90, 220],
 };
 
 const spellIcon = (sp, d) => (sp.id === 'basic' ? CLASS_ICON[d.hero.cls] || '•' : SPELL_ICON[sp.id] || '•');
@@ -322,11 +334,13 @@ function heroCard(d, pal, W, { big = false } = {}) {
 
 function partyList(d, pal, W) {
   const party = Object.values(d.ses.party || {});
-  const out = [cardTop(W, pal, [['◎ ', pal.magic, true], ['COMPANIONS', pal.accent, true]], [[party.length ? `${party.length} fighting` : 'none', party.length ? pal.magic : pal.dim]])];
+  const mode = currentMode(d.ses || {});
+  const state = mode === 'victory' || mode === 'cheer' ? 'celebrating' : isBusy(mode) ? 'fighting' : 'resting';
+  const out = [cardTop(W, pal, [['◎ ', pal.magic, true], ['COMPANIONS', pal.accent, true]], [[party.length ? `${party.length} ${state}` : 'none', party.length ? (state === 'fighting' ? pal.magic : pal.dim) : pal.dim]])];
   if (!party.length) out.push(cardRow(W, pal, [['Agents Claude launches join you here.', pal.dim]]));
   party.forEach((p, i) => {
     const cc = classColors(p.cls, pal).H;
-    const spin = '◐◓◑◒'[((ui.tick >> 1) + i) % 4];
+    const spin = state === 'fighting' ? '◐◓◑◒'[((ui.tick >> 1) + i) % 4] : state === 'celebrating' ? '★' : (ui.tick >> 3) % 2 ? 'z' : 'Z';
     out.push(p.guild
       ? cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.name || p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [`Lv ${p.level || 1}`, pal.dim]])
       : cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [p.since ? `${Math.round((Date.now() - p.since) / 1000)}s` : '', pal.dim]]));
@@ -379,29 +393,60 @@ function badge(a, d, pal, w, got) {
   const icon = done ? '★' : RING[Math.min(3, Math.floor(ratio * 4))];
   const iconC = done ? pal.gold : ratio > 0 ? pal.magic : pal.dim;
   const inner = done ? X.mix(pal.panel, pal.gold, 0.06) : pal.panel;
+  const desc = a.secret && !done ? '???' : a.desc;
   const barW = Math.max(4, w - 4 - 10);
   const count = `${compact(done ? a.goal : v)}/${compact(a.goal)}`;
   return [
     cardTop(w, pal, [[`${icon} `, iconC, true], [a.name, done ? pal.gold : pal.text, done]], [], { color: col }),
-    cardRow(w, pal, [[a.desc, done ? pal.text : pal.dim]], [], { color: col, inner }),
+    cardRow(w, pal, [[desc, done ? pal.text : pal.dim]], [], { color: col, inner }),
     cardRaw(w, pal, `${bg(inner)} ${thinBar(ratio, barW, done ? pal.accent : X.shade(pal.magic, 0.7), done ? pal.gold : pal.magic, X.mix(inner, pal.text, 0.12), inner)}${fg(done ? pal.gold : pal.text)} ${count.padStart(9)}`, { color: col, inner }),
     cardBottom(w, pal, [[done ? '✓ unlocked' : `${Math.round(ratio * 100)}%`, done ? pal.good : pal.dim, done]], { color: col }),
   ];
 }
 
-function trophiesTab(d, pal, W) {
+// Trophy Hall: a header, then rows of 4-line badges. Scrolls a badge row at
+// a time (↑↓, PgUp/PgDn, Home/End; see trophiesKey).
+function trophyRows(d, pal, W) {
   const got = new Set(d.state.achievements);
-  const total = L.ACHIEVEMENTS.length;
-  const barW = Math.max(10, Math.min(30, W - 44));
-  const out = W < 70 ? [panelLine(W, pal.panel2, [[' ★ TROPHIES ', pal.gold, true], [`${got.size}/${total} unlocked`, pal.dim]])] : [padRaw(`${bg(pal.panel2)}${fg(pal.gold)}${BOLD} ★ TROPHY HALL ${NOBOLD} ${labelBar(got.size / total, barW, X.shade(pal.gold, 0.7), pal.gold, X.mix(pal.panel2, pal.text, 0.1), `${got.size}/${total} unlocked`, { ink: pal.ink, text: pal.text })}${bg(pal.panel2)}${fg(pal.dim)}  ${got.size === total ? 'every trophy won!' : 'keep questing to fill the hall'}`, W, pal.panel2)];
   const cols = Math.max(1, Math.floor(W / 30)), cw = Math.floor(W / cols);
   const sorted = [...L.ACHIEVEMENTS].sort((a, b) => (got.has(b.id) ? 1 : 0) - (got.has(a.id) ? 1 : 0));
+  const rows = [];
   for (let i = 0; i < sorted.length; i += cols) {
     const row = sorted.slice(i, i + cols).map((a, j) => badge(a, d, pal, j === cols - 1 ? W - cw * (cols - 1) : cw, got));
     while (row.length < cols) row.push(Array(4).fill(panelLine(row.length === cols - 1 ? W - cw * (cols - 1) : cw, pal.panel, [])));
-    for (let r = 0; r < 4; r++) out.push(row.map((b) => b[r]).join(''));
+    rows.push([0, 1, 2, 3].map((r) => row.map((b) => b[r]).join('')));
   }
+  return rows;
+}
+function trophiesTab(d, pal, W, h = 999) {
+  const got = new Set(d.state.achievements);
+  const total = L.ACHIEVEMENTS.length;
+  const rows = trophyRows(d, pal, W);
+  const fit = Math.max(1, Math.floor((h - 1) / 4));
+  const maxTop = Math.max(0, rows.length - fit);
+  const top = ui.trophyTop = Math.max(0, Math.min(maxTop, ui.trophyTop || 0));
+  ui.trophyPage = fit; ui.trophyMax = maxTop;
+  const more = rows.length > fit ? `  ${top + 1}-${Math.min(rows.length, top + fit)}/${rows.length} ↑↓` : '';
+  const barW = Math.max(10, Math.min(30, W - 44 - more.length));
+  const out = W < 70 + more.length
+    ? [panelLine(W, pal.panel2, [[' ★ TROPHIES ', pal.gold, true], [`${got.size}/${total}`, pal.dim]], [[more ? `${more.trim()} ` : '', pal.dim]])]
+    : [padRaw(`${bg(pal.panel2)}${fg(pal.gold)}${BOLD} ★ TROPHY HALL ${NOBOLD} ${labelBar(got.size / total, barW, X.shade(pal.gold, 0.7), pal.gold, X.mix(pal.panel2, pal.text, 0.1), `${got.size}/${total} unlocked`, { ink: pal.ink, text: pal.text })}${bg(pal.panel2)}${fg(pal.dim)}  ${more ? more.trim() : got.size === total ? 'every trophy won!' : 'keep questing to fill the hall'}`, W, pal.panel2)];
+  for (const r of rows.slice(top, top + fit)) out.push(...r);
   return out;
+}
+
+// Scroll the Trophy Hall. Returns true when the key was handled.
+function trophiesKey(key) {
+  const page = ui.trophyPage || 1, max = ui.trophyMax ?? 999;
+  const top = ui.trophyTop || 0;
+  const set = (v) => { ui.trophyTop = Math.max(0, Math.min(max, v)); return true; };
+  if (key === '\x1b[A' || key === 'k') return set(top - 1);
+  if (key === '\x1b[B' || key === 'j') return set(top + 1);
+  if (key === '\x1b[5~') return set(top - page);
+  if (key === '\x1b[6~') return set(top + page);
+  if (key === '\x1b[H' || key === '\x1b[1~') return set(0);
+  if (key === '\x1b[F' || key === '\x1b[4~') return set(max);
+  return false;
 }
 
 // ---------- hero tab ----------
@@ -426,7 +471,7 @@ function heroTab(d, pal, W) {
 // slots greyed with a padlock. Records click zones (1-based columns).
 function hotbar(d, pal, W) {
   C.setClass(d.hero.cls);
-  const kit = C.kitFor(d.hero.cls);
+  const kit = require('./skills').loadout(d);
   const base = darken(pal.panel, 0.35);
   let s = `${bg(base)} `, used = 1;
   const zones = [];
@@ -567,7 +612,12 @@ function footer(pal, W, keys) {
   const base = darken(pal.panel, 0.35);
   const capBg = X.mix(pal.panel2, pal.text, 0.16);
   let s = `${bg(base)} `, used = 1;
-  for (const [k, lbl] of keys) {
+  const cost = ([k, lbl]) => vis(` ${k} `) + vis(` ${lbl}  `);
+  const must = keys.filter(([k]) => k === 'q' || k === 'tab');
+  let room = W - 1 - must.reduce((n, kv) => n + cost(kv), 0);
+  const keep = new Set(must);
+  for (const kv of keys) if (!keep.has(kv) && cost(kv) <= room) { keep.add(kv); room -= cost(kv); }
+  for (const [k, lbl] of keys.filter((kv) => keep.has(kv))) {
     const kk = ` ${k} `, ll = ` ${lbl}  `;
     if (used + vis(kk) + vis(ll) > W) break;
     s += `${bg(capBg)}${fg(pal.accent)}${BOLD}${kk}${NOBOLD}${bg(base)}${fg(pal.dim)}${ll}`;
@@ -577,6 +627,7 @@ function footer(pal, W, keys) {
 }
 
 module.exports = {
+  trophiesKey, trophyRows,
   truncVis, panelLine, gradBar, barPart, ICONS, eventColor, collapse, stripIcon, questLog, fmtNum, heroCard, partyList, partyTab, trophiesTab, heroTab, hotbar, header, footer,
   // new helpers
   labelBar, thinBar, rule, cardTop, cardBottom, cardSep, cardRow, cardRaw, padRaw, sectionHeader, wrap, fitParts, renderParts,

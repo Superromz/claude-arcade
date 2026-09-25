@@ -150,3 +150,8 @@ These extend the contract above; nothing listed earlier was removed.
 | `hero` | `create` needs `look` (`name` 1-16 of letters, digits, space, `. ' -`; `cls`, `primary`, `secondary`, `skin`, `hair`, `accessory` from `assets.looks`); `edit` takes a partial `look` (and switches to `id` first); `delete` refuses the last hero; the client confirms deletes |
 | `quit` | Stops the server (saves first) |
 
+## Additions (difficulty update)
+
+Additive fields only. Monsters: `affixes[]`, `shield`, `shieldMax`, `armor`, `resist`, `weak`, `enraged`,
+`split`, `fleeing`, `stun`, `charm`, `sleep`, `fear`, `goldMult`. Battle: `tier { id, name, label, level, color, hp, gold, loot }`,
+`heroHp`, `heroHpMax`, `barrier`, `ko { t, until }`, `knockouts`, `pets[]`, `fx[]`.

@@ -10,8 +10,12 @@ numbers. The **Skills** tab (tab 3) holds your class's skill tree.
 
 ## Branches
 
-Each class has **3 branches of 5 nodes**. The last node of each branch is a **capstone**, and
-nodes open by tier (levels 1, 4, 8, 12 and 16). Each node needs the one above it.
+Each class has **3 branches of 8 nodes**. Nodes open by tier (levels 1, 4, 8, 12, 16, 20, 28 and
+40), and each node needs the one above it. Tier 5 is the branch's **capstone** (★). Tiers 6 and 7
+add defense and upgrades for the newer skills (max HP, damage reduction, healing, armor piercing,
+faster shield breaking, element damage). Tier 8 is the **Awakened** capstone (✦, Lv 40), which
+upgrades the tier-5 capstone: Phoenix Fire splits into 5, Starstorm strikes three times, Deadeye
+crits deal ×4, Bladestorm spins three times, Plague spreads to two monsters, and so on.
 
 Node effects include more damage for a skill, extra targets, shorter cooldowns, faster attacks,
 longer effects, damage over time, and on-hit burn, stun, bleed or lifesteal. Some nodes are tied
@@ -31,11 +35,11 @@ Capstones and special nodes change how a skill works:
 ## Respec
 
 Press `r` on the Skills tab to refund every point. It costs gold: **100, then 200, 400, …**
-(doubling each time) and asks you to confirm.
+(doubling each time) and asks you to confirm. Your hotbar loadout stays as it is.
 
 ## Paragon
 
-Once every rank in your tree is learned, each new point becomes a **paragon point** for a small
+Once every rank in your tree is learned (about 45 ranks), each new point becomes a **paragon point** for a small
 permanent boost with no cap: **Might** (+1% damage), **Fortune** (+1% gold) or **Precision**
 (+1% crit). Paragon points survive a respec.
 
@@ -46,5 +50,10 @@ permanent boost with no cap: **Might** (+1% damage), **Fortune** (+1% gold) or *
 | `↑↓←→` | Move between nodes |
 | `Enter` | Learn a rank |
 | `r` | Respec (asks to confirm) |
+| `k` | Switch to **Skills & Loadout** and back |
+
+In **Skills & Loadout**, `↑↓` picks a skill, `←→` picks a hotbar slot and `e` equips it (see
+[Combat and Spells](Combat-and-Spells#hotbar-loadout)). The Skills tab also shows your current
+[difficulty tier](Combat-and-Spells#difficulty).
 
 The tree never grants XP. XP only comes from real Claude usage.

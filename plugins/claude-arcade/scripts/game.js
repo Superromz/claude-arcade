@@ -79,7 +79,9 @@ function frame(cols, rows) {
     : TABS[ui.tab] === 'Campaign'
     ? [['m', 'map'], ['j', 'chapter'], ['k', 'codex'], ['↑↓', 'select'], ['r', 'story'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Skills'
-    ? [['↑↓←→', 'move'], ['enter', 'learn'], ['r', 'respec'], ['tab', 'view'], ['q', 'quit']]
+    ? [['↑↓←→', 'move'], ['enter', 'learn'], ['k', 'skills / loadout'], ['e', 'equip'], ['r', 'respec'], ['tab', 'view'], ['q', 'quit']]
+    : TABS[ui.tab] === 'Trophies'
+    ? [['↑↓', 'scroll'], ['PgUp/PgDn', 'page'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Bounties'
     ? [['←→↑↓', 'select'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Guild'
@@ -163,6 +165,7 @@ function onKey(key) {
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
   if (TABS[ui.tab] === 'Skills' && key !== '\t' && skillsKey(key, d)) return render(true);
+  if (TABS[ui.tab] === 'Trophies' && key !== '\t' && require('./panels').trophiesKey(key)) return render(true);
   if (TABS[ui.tab] === 'Campaign' && key !== '\t' && campaignKey(key, d)) return render(true);
   if (key === 'q' || key === '\x1b') return askQuit();
   if (key === 'g') return toggleHD();

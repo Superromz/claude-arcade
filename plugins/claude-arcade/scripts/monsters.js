@@ -778,16 +778,38 @@ function drawMonster(pc, m, t, { target = false } = {}) {
     pc.set(fx, y + dy - 1 - ((at + k) % 3), (at + k) % 2 ? [255, 220, 90] : [255, 120, 40]);
   }
   if (m.taunt > 0 && at & 4) pc.label(Math.round(x + w / 2), Math.max(0, Math.floor((y - 8) / 2)), '!', [120, 190, 255], true);
+  const aff = m.affixes || [];
+  if (aff.includes('regen') && !(m.burn > 0) && !(m.poison > 0) && m.hp < m.max) for (let k = 0; k < 3; k++) {
+    const ph = (at + k * 5) % 12;
+    pc.set(x + 1 + Math.round(X.hash(k, (at / 12) | 0) * (w - 2)), y + h - 2 - ph, ph < 6 ? [150, 255, 150] : [90, 200, 90]);
+  }
+  if (aff.includes('swift') && m.walking) for (let k = 0; k < 3; k++) for (let i = 0; i < 3 + k; i++) pc.set(x + w + 1 + i + (at % 2), y + 2 + k * Math.max(2, Math.floor(h / 3)), [255, 240, 150]);
+  if (aff.includes('vampiric') && (m.vampT || 0) > 0) { m.vampT--; pc.glow(x + w / 2, y + h / 2, Math.max(w, h) * 0.7, [220, 30, 60], 0.35); }
+  if (m.shield > 0) for (let k = 0; k < 20; k++) {
+    const g = (k / 20) * Math.PI * 2 + at * 0.05;
+    if ((k + (at >> 2)) % 3) pc.set(x + w / 2 + Math.cos(g) * (w / 2 + 2), y + h / 2 + Math.sin(g) * (h / 2 + 2), [120, 220, 255]);
+  }
 
   // Outlined HP bar (bosses get the big one from battle.js).
   if (m.boss) return;
   const bw = Math.max(10, w), bx = x + Math.floor((w - bw) / 2), by = y - (m.elite ? 7 : 4);
   const ratio = Math.max(0, m.hp / m.max);
   const barCol = ratio > 0.6 ? [110, 230, 100] : ratio > 0.3 ? [250, 210, 70] : [255, 80, 70];
-  const edge = m.elite ? [255, 206, 70] : pal.K;
+  const edge = aff.includes('armored') ? [176, 186, 206] : m.elite ? [255, 206, 70] : pal.K;
   for (let i = -1; i <= bw; i++) { pc.set(bx + i, by - 1, edge); pc.set(bx + i, by + 2, edge); }
   for (let i = 0; i < bw; i++) for (let j = 0; j < 2; j++) pc.set(bx + i, by + j, i < Math.round(bw * ratio) ? X.shade(barCol, j ? 0.75 : 1) : [54, 44, 60]);
   pc.set(bx - 1, by, edge); pc.set(bx - 1, by + 1, edge); pc.set(bx + bw, by, edge); pc.set(bx + bw, by + 1, edge);
+  // Shield bar above the HP bar, and one pip per affix above that.
+  let top = by - 1;
+  if (m.shieldMax > 0 && m.shield > 0) {
+    top = by - 3;
+    for (let i = 0; i < bw; i++) pc.set(bx + i, by - 2, i < Math.round(bw * m.shield / m.shieldMax) ? [120, 220, 255] : [40, 60, 80]);
+  }
+  aff.forEach((a, i) => {
+    const c = affixColor(m, a), px = bx + i * 3;
+    if (a === 'weak' && at & 4) return;
+    pc.set(px, top - 1, c); pc.set(px + 1, top - 1, c);
+  });
 }
 
 const easeIn = (k) => k * k;
@@ -864,4 +886,68 @@ function drawDeath(pc, m, def, pal, S, w, h) {
   }
 }
 
-module.exports = { MONSTERS, MONSTER_COLORS, ROSTERS, BOSSES, BOSS_POOLS, pickBoss, bossBiome, drawMonster, monsterSize, paletteFor, deathTicks, paint };
+// ---------- difficulty ----------
+
+// Difficulty tiers by hero level. hp: monster HP multiplier; hit: a normal
+// monster's hit as a share of the hero's battle HP; aggro: attack rate;
+// gold: gold per kill; loot: bonus added to chest scores; chance/max:
+// affixes on normal monsters; elite: [min, max] affixes on elites; boss:
+// affixes on bosses. XP never depends on the tier.
+const DIFFICULTY = [
+  { id: 'normal', name: 'Normal', min: 1, hp: 1, hit: 0.04, aggro: 1, gold: 1, loot: 0, chance: 0, max: 0, elite: [1, 1], boss: 0, color: [140, 220, 120] },
+  { id: 'veteran', name: 'Veteran', min: 20, hp: 1.2, hit: 0.12, aggro: 1.1, gold: 1.25, loot: 2, chance: 0.15, max: 1, elite: [1, 2], boss: 0, color: [120, 190, 255] },
+  { id: 'heroic', name: 'Heroic', min: 35, hp: 1.3, hit: 0.3, aggro: 1.2, gold: 1.5, loot: 4, chance: 0.35, max: 1, elite: [2, 3], boss: 1, color: [255, 176, 60] },
+  { id: 'mythic', name: 'Mythic', min: 50, hp: 1.9, hit: 0.36, aggro: 1.3, gold: 2, loot: 6, chance: 0.6, max: 2, elite: [3, 3], boss: 2, color: [255, 90, 90] },
+  { id: 'abyss', name: 'Abyss', min: 60, hp: 2.2, hit: 0.4, aggro: 1.35, gold: 2.5, loot: 8, chance: 0.8, max: 2, elite: [3, 3], boss: 2, color: [190, 110, 255] },
+];
+// Abyss has no cap: a new Abyss level every 3 hero levels past 60.
+function difficultyFor(lvl, force) {
+  const f = force || process.env.ARCADE_TIER || '';
+  let base, n = 0;
+  if (f) {
+    const [id, lv] = String(f).split(':');
+    base = DIFFICULTY.find((t) => t.id === id);
+    if (base && base.id === 'abyss') n = Math.max(1, Number(lv) || 1);
+  }
+  if (!base) {
+    base = [...DIFFICULTY].reverse().find((t) => (lvl || 1) >= t.min) || DIFFICULTY[0];
+    if (base.id === 'abyss') n = 1 + Math.floor(((lvl || 60) - 60) / 3);
+  }
+  const t = { ...base, index: DIFFICULTY.indexOf(base), level: n, label: n ? `${base.name.toUpperCase()} ${n}` : base.name.toUpperCase() };
+  if (n) {
+    t.hp = base.hp * Math.pow(1.06, n - 1);
+    t.hit = Math.min(0.5, base.hit + 0.008 * (n - 1));
+    t.aggro = Math.min(1.8, base.aggro + 0.02 * (n - 1));
+    t.gold = base.gold + 0.2 * (n - 1);
+    t.loot = base.loot + (n - 1);
+    t.max = Math.min(4, base.max + Math.floor((n - 1) / 4));
+    t.elite = [3, Math.min(5, 3 + Math.floor(n / 4))];
+    t.boss = Math.min(4, base.boss + Math.floor(n / 5));
+  }
+  return t;
+}
+
+// ---------- affixes ----------
+
+// Harder difficulty tiers give monsters affixes (rolled in battle.js). Each
+// shows as a colored pip over the HP bar and a word on the name tag.
+const ELEMENT_COLOR = { fire: [255, 120, 40], frost: [140, 220, 255], lightning: [255, 236, 100], shadow: [170, 90, 240], holy: [255, 230, 150], physical: [205, 200, 190] };
+const AFFIXES = {
+  armored: { name: 'Armored', color: [176, 186, 206], desc: 'Every hit is reduced by a flat amount. Damage over time ignores armor.' },
+  shielded: { name: 'Shielded', color: [110, 210, 255], desc: 'A shield bar must break before HP drops. Lightning and heavy skills break it faster.' },
+  swift: { name: 'Swift', color: [255, 240, 120], desc: 'Moves and attacks faster.' },
+  regen: { name: 'Regenerating', color: [110, 230, 110], desc: 'Heals over time, unless burning or poisoned.' },
+  vampiric: { name: 'Vampiric', color: [225, 40, 70], desc: 'Heals itself when it hits you.' },
+  splitting: { name: 'Splitting', color: [200, 130, 255], desc: 'Splits into two smaller monsters when it dies.' },
+  enraged: { name: 'Enraging', color: [255, 90, 40], desc: 'Below 30% HP it hits harder and faster.' },
+  resist: { name: 'Resistant', color: [150, 150, 170], desc: 'Takes half damage from one element.' },
+  weak: { name: 'Weak', color: [255, 255, 255], desc: 'Takes +50% damage from one element.' },
+};
+const cap1 = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+// Name-tag words, e.g. "Armored Swift Fire-proof".
+function affixLabel(m) {
+  return (m.affixes || []).map((a) => (a === 'resist' ? `${cap1(m.resist || 'fire')}-proof` : a === 'weak' ? `${cap1(m.weak || 'fire')}-weak` : (AFFIXES[a] || {}).name)).filter(Boolean).join(' ');
+}
+const affixColor = (m, a) => (a === 'resist' ? ELEMENT_COLOR[m.resist] : a === 'weak' ? ELEMENT_COLOR[m.weak] : null) || (AFFIXES[a] || {}).color || [255, 255, 255];
+
+module.exports = { MONSTERS, MONSTER_COLORS, ROSTERS, BOSSES, BOSS_POOLS, pickBoss, bossBiome, drawMonster, monsterSize, paletteFor, deathTicks, paint, AFFIXES, ELEMENT_COLOR, affixLabel, affixColor, DIFFICULTY, difficultyFor };

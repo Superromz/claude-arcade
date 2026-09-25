@@ -70,7 +70,7 @@ function main() {
     const addTokens = (file, key) => {
       state.offsets ||= {};
       state.tokens ||= { input: 0, output: 0 };
-      const u = C.readTokens(file, state.offsets, key);
+      const u = C.readTokens(file, state.offsets, key, (state.tokenSeen ||= []));
       if (!u.input && !u.output) return 0;
       state.tokens.input += u.input;
       state.tokens.output += u.output;
