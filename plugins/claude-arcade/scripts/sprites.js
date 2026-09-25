@@ -103,6 +103,8 @@ function drawHero(pc, ch, x, y, { pose = 'stand', t = 0, flip = false, tint = nu
   for (let dx = 2; dx < 14; dx++) pc.set(px(dx), y + 24, X.shade(pc.get(Math.max(0, Math.min(pc.w - 1, px(dx))), Math.min(pc.h - 1, y + 24)) || [0, 0, 0], 0.55));
   if (ch.accessory === 'cape') pc.sprite(x, y, CAPE((t >> 3) % 2), pal, { flip, tint });
   pc.sprite(x, y, build(ch, pose, t), pal, { flip, tint });
+  // Equipped cosmetics from the shop (items.js) sit between body and weapon.
+  try { require('./items').drawEquipment(pc, ch, { x, y, px, pal, t, pose, flip }); } catch {}
   drawWeapon(pc, cls.weapon, px, y, pal, t, pose, action, glowColor);
 }
 
