@@ -7,6 +7,9 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 ## Unreleased
 
 ### Changed
+- Sharper text-mode graphics: the battle scene uses the finest pixel the terminal can draw (half a character) instead of zooming in on big panes, and very large panes zoom with a smoothing filter instead of blocky pixels.
+
+### Changed
 - Pressing `q` or `Esc` asks "Leave the game?" before quitting. `Ctrl+C` still quits right away.
 
 ## [0.6.0] - 2026-09-25

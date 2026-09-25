@@ -359,7 +359,9 @@ function drawScene(pc, d, pal) {
 // Render at a logical resolution sized so the hero is ~40% of the scene height.
 function sceneLines(cols, rows, d, pal) {
   if (HD.state.on) return sceneLinesHD(cols, rows, d, pal);
-  const S = Math.max(1, Math.min(4, Math.round((rows * 2) / 62)));
+  // Text mode: one game pixel = half a character cell, the finest text can draw. Only
+  // enormous panes zoom 2x (smoothed below), so big panes show more world, not bigger blocks.
+  const S = rows > 110 ? 2 : 1;
   const lc = Math.ceil(cols / S), lr = Math.ceil(rows / S);
   const small = new X.PixelCanvas(lc, lr);
   ui.sceneScale = S; ui.textScale = null;
@@ -368,7 +370,12 @@ function sceneLines(cols, rows, d, pal) {
   if (S === 1) lines = small.lines();
   else {
     const big = new X.PixelCanvas(cols, rows);
-    for (let y = 0; y < big.h; y++) for (let x = 0; x < cols; x++) big.px[y * cols + x] = small.px[Math.floor(y / S) * lc + Math.floor(x / S)];
+    if (process.env.ARCADE_SMOOTH === '0') {
+      for (let y = 0; y < big.h; y++) for (let x = 0; x < cols; x++) big.px[y * cols + x] = small.px[Math.floor(y / S) * lc + Math.floor(x / S)];
+    } else {
+      const up = X.smoothScale(small.px, lc, small.h, S);
+      for (let y = 0; y < big.h; y++) for (let x = 0; x < cols; x++) big.px[y * cols + x] = up.px[y * up.w + x];
+    }
     // Keep each label's characters together: a run of adjacent cells starts at
     // its scaled column and continues cell by cell (text does not scale).
     const cells = [...small.text].map(([k, v]) => [...k.split(',').map(Number), v]).sort((a, b) => a[1] - b[1] || a[0] - b[0]);

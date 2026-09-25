@@ -156,7 +156,62 @@ const BIRD = [['K.....K', '.KKWKK.', '...K...'], ['.......', 'KKKWKKK', '...K...
 const TORCH = [['.F.', 'FfF', '.r.', '.w.', '.w.'], ['F..', 'fF.', '.r.', '.w.', '.w.']];
 const BOOK = ['KWWKWWK', 'KWWKWWK', '.KKKKK.'];
 
-module.exports = {
+// ---------- smooth pixel-art upscaling (Scale2x / Scale3x) ----------
+// Nearest-neighbour upscaling turns every game pixel into a big block.
+// Scale2x/3x (the emulator filters) instead round off diagonals and curves
+// while keeping edges crisp. Colors count as equal within a small tolerance,
+// so lighting and vignette gradients don't stop sprites from smoothing.
+const near = (a, b) => a === b || (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) <= 24);
+
+function scale2x(src, w, h) {
+  const W = w * 2, out = new Array(W * h * 2);
+  const at = (x, y) => src[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const E = at(x, y), B = at(x, y - 1), D = at(x - 1, y), F = at(x + 1, y), H = at(x, y + 1);
+    const o = y * 2 * W + x * 2;
+    if (near(B, H) || near(D, F)) { out[o] = out[o + 1] = out[o + W] = out[o + W + 1] = E; continue; }
+    out[o] = near(D, B) ? D : E;
+    out[o + 1] = near(B, F) ? F : E;
+    out[o + W] = near(D, H) ? D : E;
+    out[o + W + 1] = near(H, F) ? F : E;
+  }
+  return out;
+}
+
+function scale3x(src, w, h) {
+  const W = w * 3, out = new Array(W * h * 3);
+  const at = (x, y) => src[Math.min(h - 1, Math.max(0, y)) * w + Math.min(w - 1, Math.max(0, x))];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const A = at(x - 1, y - 1), B = at(x, y - 1), C = at(x + 1, y - 1);
+    const D = at(x - 1, y), E = at(x, y), F = at(x + 1, y);
+    const G = at(x - 1, y + 1), H = at(x, y + 1), I = at(x + 1, y + 1);
+    const o = y * 3 * W + x * 3;
+    const put = (i, j, c) => { out[o + j * W + i] = c; };
+    if (near(B, H) || near(D, F)) { for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) put(i, j, E); continue; }
+    const db = near(D, B), bf = near(B, F), dh = near(D, H), hf = near(H, F);
+    put(0, 0, db ? D : E);
+    put(1, 0, (db && !near(E, C)) || (bf && !near(E, A)) ? B : E);
+    put(2, 0, bf ? F : E);
+    put(0, 1, (db && !near(E, G)) || (dh && !near(E, A)) ? D : E);
+    put(1, 1, E);
+    put(2, 1, (bf && !near(E, I)) || (hf && !near(E, C)) ? F : E);
+    put(0, 2, dh ? D : E);
+    put(1, 2, (dh && !near(E, I)) || (hf && !near(E, G)) ? H : E);
+    put(2, 2, hf ? F : E);
+  }
+  return out;
+}
+
+// Upscale a w×h pixel array by S (1-4). Returns { px, w, h }.
+function smoothScale(px, w, h, S) {
+  if (S <= 1) return { px, w, h };
+  if (S === 2) return { px: scale2x(px, w, h), w: w * 2, h: h * 2 };
+  if (S === 3) return { px: scale3x(px, w, h), w: w * 3, h: h * 3 };
+  const a = scale2x(px, w, h);
+  return { px: scale2x(a, w * 2, h * 2), w: w * 4, h: h * 4 };
+}
+
+module.exports = { smoothScale, scale2x, scale3x,
   PixelCanvas, mix, shade, hash, clamp, BASE, OUTFITS, CLASS_COLORS,
   HERO_FRAMES, MEMBER, GOBLIN, CHEST, FIRE, ANVIL, CRYSTAL, BIRD, TORCH, BOOK,
 };
