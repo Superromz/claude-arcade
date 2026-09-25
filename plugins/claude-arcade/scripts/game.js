@@ -27,8 +27,9 @@ const { shopTab, shopKey } = require('./shop');
 const { projectsTab } = require('./projects');
 const { guildTab, guildKey } = require('./guild');
 const { bountiesTab, bountiesKey } = require('./bounties');
+const { skillsTab, skillsKey } = require('./skills');
 // Tab bodies by name, so TABS order can change freely.
-const TAB_FN = { Hero: heroTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
+const TAB_FN = { Hero: heroTab, Skills: skillsTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
 const { applyOverlay } = require('./celebrate');
 const { sectionHeader } = require('./panels');
 const HD = require('./hd');
@@ -72,6 +73,8 @@ function frame(cols, rows) {
   ui.hotbarRow = out.length;
   const keys = TABS[ui.tab] === 'Shop'
     ? [['←→↑↓', 'browse'], ['enter', 'buy / equip'], ['u', 'unequip'], ['tab', 'view'], ['q', 'quit']]
+    : TABS[ui.tab] === 'Skills'
+    ? [['↑↓←→', 'move'], ['enter', 'learn'], ['r', 'respec'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Bounties'
     ? [['←→↑↓', 'select'], ['enter', 'claim'], ['tab', 'view'], ['q', 'quit']]
     : TABS[ui.tab] === 'Guild'
@@ -147,6 +150,7 @@ function onKey(key) {
   if (ui.screen === 'create') { creatorKey(key, d); return render(true); }
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
   if (key.startsWith('\x1b[<')) return onMouse(key, d);
+  if (TABS[ui.tab] === 'Skills' && key !== '\t' && skillsKey(key, d)) return render(true);
   if (key === 'q' || key === '\x1b') return quit();
   if (key === 'g') return toggleHD();
   if (TABS[ui.tab] === 'Shop' && key !== '\t' && key !== 'q' && shopKey(key, d)) return render(true);

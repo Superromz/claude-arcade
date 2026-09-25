@@ -9,9 +9,9 @@
 - [ ] Integrate the above, Shop tab, Projects view, full test + visual pass, release
 
 ## Next
-1. **Class skill kits.** Each class gets its own five skills, triggered by what Claude does and
+1. ✅ **Class skill kits.** Each class gets its own five skills, triggered by what Claude does and
    unlocked at Lv 3/5/8/12/18 (Knight: Shield Bash, Taunt, Whirlwind, Holy Strike, Judgment, and so on).
-2. **Skill tree.** 3 branches per class with capstones; 1 point per level + 1 per boss.
+2. ✅ **Skill tree.** 3 branches per class with capstones; 1 point per level + 1 per boss.
    Respec costs gold. Paragon levels after the tree is full, so progress never ends.
 3. ✅ **Recruitable permanent companions** (shipped as the Guild). When an agent finishes a job, you can recruit it. Recruits
    keep a name and class, level up from the jobs they help with, and camp with your hero between
@@ -22,4 +22,4 @@
 6. **Global leaderboard & async PvP.** Small server, GitHub login, auto-battles from stats/class.
 
 ## Open questions
-- Skill tree respec: gold (recommended) or free?
+- ~~Skill tree respec: gold or free?~~ Gold, doubling each time.

@@ -12,7 +12,7 @@ const C = require('./character');
 const SP = require('./sprites');
 const { RESET, BOLD, NOBOLD, fg, bg, UI, TABS, ui, currentMode, isBusy } = require('./state');
 // Read battle's cooldown table lazily (battle.js may require panels).
-const cooldownOf = (id) => { try { return require('./battle').COOLDOWN[id] || 1; } catch { return 1; } };
+const cooldownOf = (id) => { if (ui.cdLen && ui.cdLen[id]) return ui.cdLen[id]; try { return require('./battle').COOLDOWN[id] || 1; } catch { return 1; } };
 
 const vis = L.visWidth;
 const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
@@ -157,8 +157,22 @@ const sectionHeader = (W, pal, title, right = [], icon = '≡') =>
 const ICONS = { quest: '★', level: '▲', achievement: '◈', hurt: '×', faint: '†', summon: '◇', return: '«', combo: '»', prompt: '▸', welcome: '◆', waiting: '?', compact: '◐', action: '•' };
 
 const CLASS_ICON = { mage: '∆', ranger: '»', knight: '†', warlock: '◉', bard: '♪', rogue: '‡' };
-const SPELL_ICON = { basic: '•', fireball: '●', frost: '◇', chain: '≈', meteor: '▼', starfall: '☼' };
-const SPELL_COLOR = { fireball: [255, 128, 56], frost: [130, 206, 255], chain: [255, 232, 110], meteor: [255, 96, 72], starfall: [206, 160, 255] };
+const SPELL_ICON = {
+  basic: '•', fireball: '●', frost: '◇', chain: '≈', meteor: '▼', starfall: '☼',
+  multishot: '≡', snare: '#', pierce: '→', rain: '↓', eagle: '∧',
+  bash: '■', taunt: '!', whirl: '@', holy: '+', judgment: 'Ω',
+  curse: '§', drain: '∞', imp: 'ж', shadowflame: '▲', doom: 'Ø',
+  anthem: '♩', discord: '♯', echo: '∿', crescendo: '≋', encore: '★',
+  backstab: '⌐', poison: '¡', smoke: '○', shadowstep: '⇥', deathmark: '×',
+};
+const SPELL_COLOR = {
+  fireball: [255, 128, 56], frost: [130, 206, 255], chain: [255, 232, 110], meteor: [255, 96, 72], starfall: [206, 160, 255],
+  multishot: [220, 190, 120], snare: [200, 170, 120], pierce: [230, 236, 255], rain: [210, 180, 120], eagle: [240, 220, 170],
+  bash: [150, 200, 255], taunt: [120, 190, 255], whirl: [225, 232, 250], holy: [255, 236, 150], judgment: [255, 214, 90],
+  curse: [190, 110, 250], drain: [236, 80, 110], imp: [255, 130, 50], shadowflame: [170, 90, 255], doom: [150, 80, 220],
+  anthem: [255, 200, 90], discord: [255, 110, 170], echo: [200, 170, 255], crescendo: [255, 170, 220], encore: [255, 214, 80],
+  backstab: [230, 90, 90], poison: [130, 225, 90], smoke: [180, 180, 196], shadowstep: [120, 220, 200], deathmark: [240, 70, 80],
+};
 
 const spellIcon = (sp, d) => (sp.id === 'basic' ? CLASS_ICON[d.hero.cls] || '•' : SPELL_ICON[sp.id] || '•');
 const spellName = (sp, d) => (sp.id === 'basic' ? C.BASIC_NAMES[d.hero.cls] || sp.name : sp.name);
@@ -286,11 +300,12 @@ function heroCard(d, pal, W, { big = false } = {}) {
   while (right.length < ph) right.push(panelLine(statW, pal.panel, []));
   const B = `${bg(pal.panel)}${fg(edge(pal))}`;
   for (let i = 0; i < ph; i++) out.push(`${B}│${pic[i]}${bg(pal.panel)} ${right[i]}${B}│${RESET}`);
-  const known = C.SPELLS.filter((s) => s.lvl <= d.lvl).length;
-  out.push(cardSep(W, pal, [['◇ ', pal.accent, true], ['SPELLBOOK', pal.accent, true]], [[`${known}/${C.SPELLS.length} known`, pal.dim]]));
+  const kit = C.kitFor(d.hero.cls);
+  const known = kit.filter((s) => s.lvl <= d.lvl).length;
+  out.push(cardSep(W, pal, [['◇ ', pal.accent, true], ['SKILLS', pal.accent, true]], [[`${known}/${kit.length} known`, pal.dim]]));
   const perRow = big ? 3 : 2, inner = W - 2, colW = Math.floor(inner / perRow);
-  for (let i = 0; i < C.SPELLS.length; i += perRow) {
-    const cells = C.SPELLS.slice(i, i + perRow).map((s, j, arr) => {
+  for (let i = 0; i < kit.length; i += perRow) {
+    const cells = kit.slice(i, i + perRow).map((s, j, arr) => {
       const w = j === arr.length - 1 ? inner - colW * (arr.length - 1) : colW;
       const ok = s.lvl <= d.lvl;
       return ok
@@ -312,7 +327,9 @@ function partyList(d, pal, W) {
   party.forEach((p, i) => {
     const cc = classColors(p.cls, pal).H;
     const spin = '◐◓◑◒'[((ui.tick >> 1) + i) % 4];
-    out.push(cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [p.since ? `${Math.round((Date.now() - p.since) / 1000)}s` : '', pal.dim]]));
+    out.push(p.guild
+      ? cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.name || p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [`Lv ${p.level || 1}`, pal.dim]])
+      : cardRow(W, pal, [['● ', cc, true], [cap(p.cls).padEnd(9), cc, true], [p.type || '', pal.text]], [[`${spin} `, X.mix(cc, pal.panel, 0.3)], [p.since ? `${Math.round((Date.now() - p.since) / 1000)}s` : '', pal.dim]]));
   });
   out.push(cardBottom(W, pal));
   return out;
@@ -405,19 +422,21 @@ function heroTab(d, pal, W) {
 // Skill hotbar: key cap, spell icon, cooldown sweep, ready flash, locked
 // slots greyed with a padlock. Records click zones (1-based columns).
 function hotbar(d, pal, W) {
+  C.setClass(d.hero.cls);
+  const kit = C.kitFor(d.hero.cls);
   const base = darken(pal.panel, 0.35);
   let s = `${bg(base)} `, used = 1;
   const zones = [];
   ui.hbPrev = ui.hbPrev || {}; ui.hbReady = ui.hbReady || {};
   // Equal slots when wide; otherwise locked slots shrink to "Ө Lv N" so the
   // spells you know get room for their names.
-  const even = Math.floor((W - 1) / C.SPELLS.length);
+  const even = Math.floor((W - 1) / kit.length);
   const useEven = even >= 22;
   const lockedW = (sp) => 3 + vis(` Ө Lv ${sp.lvl} `) + 1;
-  const locked = C.SPELLS.filter((sp) => sp.lvl > d.lvl);
-  const knownN = C.SPELLS.length - locked.length;
+  const locked = kit.filter((sp) => sp.lvl > d.lvl);
+  const knownN = kit.length - locked.length;
   const knownW = Math.max(12, Math.min(30, Math.floor((W - 1 - locked.reduce((n, sp) => n + lockedW(sp), 0)) / Math.max(1, knownN))));
-  C.SPELLS.forEach((sp, i) => {
+  kit.forEach((sp, i) => {
     const known = sp.lvl <= d.lvl;
     const slotW = useEven ? Math.min(30, even) : known ? knownW : lockedW(sp);
     if (used + slotW > W) return;
@@ -470,6 +489,7 @@ function gradientText(str, c1, c2) {
 }
 
 function header(d, pal, W) {
+  if (d.hero) C.setClass(d.hero.cls); // C.SPELLS follows the active hero
   const t = L.theme(d.cfg);
   const out = [];
   const bar = darken(pal.panel, 0.35);

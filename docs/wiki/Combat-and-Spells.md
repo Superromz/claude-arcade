@@ -51,23 +51,24 @@ When Claude finishes the task, your hero lands a **finisher** on the boss. If Cl
 before that, the boss retreats. A boss is worth 50 to 150 XP and a big pile of gold, and a
 **VICTORY** banner marks the moment (see [Camp and Celebrations](Camp-and-Celebrations)).
 
-## Spellbook
+## Class skills
 
-You start with your class's basic attack and learn new spells as you level up. Spells cast by
-Claude's tool calls prefer the one that matches the activity, and sometimes use your strongest
-known spell instead.
+Every class has a **basic attack** plus **five skills of its own**, unlocked at levels 3, 5, 8, 12
+and 18. Claude's activity picks which skill to cast: each class leans on the skill that fits what
+Claude is doing, and the hero also auto-attacks while Claude works. Skill ranks, extra targets,
+shorter cooldowns and new effects come from the [Skill Tree](Skill-Tree).
 
-| Hotbar | Spell | Unlocks | Cast by Claude when it's… | Effect |
-|---|---|---|---|---|
-| `1` | Basic attack | Lv 1 | anything else | Single target. The name depends on your class |
-| `2` | Fireball | Lv 3 | editing or planning | Area damage, sets monsters on fire |
-| `3` | Frost Shard | Lv 5 | reading or searching | Single target, slows the monster |
-| `4` | Chain Lightning | Lv 8 | running commands | Jumps between up to 3 monsters |
-| `5` | Meteor | Lv 12 | using the web or launching agents | Big area damage, burns |
-| `6` | Starfall | Lv 18 | thinking | Hits every monster on the field |
+| Class | Lv 3 | Lv 5 | Lv 8 | Lv 12 | Lv 18 |
+|---|---|---|---|---|---|
+| Mage | Fireball (area, burn) | Frost Nova (freeze ring) | Chain Lightning | Meteor | Starfall |
+| Ranger | Multishot | Snare Trap (root) | Piercing Arrow (hits all in a line) | Rain of Arrows | Eagle Strike |
+| Knight | Shield Bash (stun) | Taunt (all) | Whirlwind | Holy Strike (light pillar) | Judgment (stuns all) |
+| Warlock | Curse (damage over time) | Drain Life (heals HP) | Summon Imp (fights for 8 s) | Shadowflame (burning cone) | Doom (bursts for 4× later) |
+| Bard | Anthem (+25% party damage) | Discord (stun ring) | Echo (replays your last skill) | Crescendo (sound wave) | Encore (hits all, resets cooldowns) |
+| Rogue | Backstab (dash, high crit) | Poison Blade | Smoke Bomb (dodge) | Shadow Step (2 targets) | Death Mark (+50% damage taken, then bursts) |
 
-Basic attacks by class: Arcane Spark (Mage), Arrow (Ranger), Sword Wave (Knight), Shadow Bolt
-(Warlock), Power Chord (Bard), Throwing Knife (Rogue).
+Base cooldowns: basic 0.6 s, then 3 / 3 / 5 / 9 / 15 s. The hotbar (`1`-`6`) shows your class's
+skills in unlock order.
 
 ## Playing along
 
@@ -75,7 +76,7 @@ You don't have to do anything, but you can:
 
 | Input | What it does |
 |---|---|
-| `1`-`6` | Cast that hotbar spell for **1.5× damage**. Each spell has a cooldown, shown as the slot refilling |
+| `1`-`6` | Cast that hotbar skill for **1.5× damage**. Each spell has a cooldown, shown as the slot refilling |
 | `space` | Basic attack |
 | Click a monster | Strike it directly (a quick hit with a short cooldown) |
 | Click a hotbar slot | Cast that spell |

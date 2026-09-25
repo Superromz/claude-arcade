@@ -222,8 +222,12 @@ function main() {
       const msg = M.say(th, 'levelUp', { lvl: levelAfter, title: L.titleFor(t, levelAfter) });
       state.pending.push(msg);
       log('level', msg);
+      // Hooks run in their own process, so point C.SPELLS at the hero's class kit.
+      C.setClass((hero || {}).cls);
+      const pts = levelAfter - levelBefore;
+      state.pending.push(`✦ +${pts} skill point${pts > 1 ? 's' : ''}. Spend them on the Skills tab.`);
       for (const sp of C.SPELLS.filter((x) => x.lvl > levelBefore && x.lvl <= levelAfter && x.lvl > 1)) {
-        const learn = `📖 New spell learned: ${sp.name}!`;
+        const learn = `📖 New skill learned: ${sp.name}!`;
         state.pending.push(learn);
         log('level', learn);
       }

@@ -11,6 +11,7 @@
 - [Combat and Spells](Combat-and-Spells)
 - [Companions](Companions)
 - [Guild](Guild)
+- [Skill Tree](Skill-Tree)
 - [Bounties](Bounties)
 - [HD Graphics](HD-Graphics)
 - [Progression and XP](Progression-and-XP)
