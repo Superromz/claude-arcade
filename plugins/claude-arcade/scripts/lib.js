@@ -86,6 +86,30 @@ function session(state, id) {
 }
 
 // Drop sessions nobody has touched for a day so state.json stays small.
+// Per-project stats, keyed by the git root of the session's cwd (or the cwd
+// itself outside a repo). Global totals stay at the top level of state.
+function projectRoot(cwd) {
+  if (!cwd) return null;
+  let d = path.resolve(cwd);
+  for (;;) {
+    if (fs.existsSync(path.join(d, '.git'))) return d;
+    const up = path.dirname(d);
+    if (up === d) return path.resolve(cwd);
+    d = up;
+  }
+}
+
+function project(state, cwd) {
+  const root = projectRoot(cwd);
+  if (!root) return null;
+  const key = process.platform === 'win32' ? root.toLowerCase() : root;
+  state.projects ||= {};
+  state.projects[key] ||= { name: path.basename(root) || root, path: root, xp: 0, quests: 0, sessions: 0, tools: {}, tokens: { input: 0, output: 0 }, firstSeen: Date.now(), lastSeen: Date.now() };
+  const p = state.projects[key];
+  p.lastSeen = Date.now();
+  return p;
+}
+
 function pruneSessions(state) {
   const cutoff = Date.now() - 24 * 3600 * 1000;
   for (const [k, s] of Object.entries(state.sessions)) if ((s.since || 0) < cutoff) delete state.sessions[k];
@@ -273,5 +297,5 @@ function unlock(state, ses) {
 module.exports = {
   HOME, STATE_FILE, CONFIG_FILE, EVENTS_FILE, withLock, logEvent, readEvents, THEMES, ACHIEVEMENTS, TOOL_XP, c, paint, bar, visWidth, padVis,
   readJSON, writeJSON, readStdin, loadState, saveState, loadConfig, saveConfig,
-  session, pruneSessions, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,
+  session, pruneSessions, project, projectRoot, levelFor, xpForLevel, theme, titleFor, modeForTool, describeTool, unlock,
 };

@@ -7,8 +7,7 @@ const L = require('./lib');
 const { paint, bar } = L;
 
 const M = require('./messages');
-const VERB = { Ranger: 'scouting', Sage: 'plotting', Paladin: 'inspecting', Warrior: 'fighting bugs', Scholar: 'studying', Mage: 'casting',
-  Scout: 'scanning', Navigator: 'plotting', Security: 'inspecting', Drone: 'on mission', SCOUT: 'SEARCHING', PLANNER: 'LOADING', PLAYER: 'PLAYING' };
+const VERB = { Mage: 'blasting', Ranger: 'scouting', Knight: 'guarding', Warlock: 'cursing', Bard: 'inspiring', Rogue: 'backstabbing', MAGE: 'BLASTING', RANGER: 'SCOUTING', KNIGHT: 'GUARDING', WARLOCK: 'CURSING', BARD: 'INSPIRING', ROGUE: 'STABBING' };
 const SPARK = { rpg: ['✦', '✧', '⋆', '✧'], space: ['·', '•', '●', '•'], retro: ['.', 'o', 'O', 'o'] };
 
 function main() {
@@ -21,7 +20,7 @@ function main() {
 
   for (const task of input.tasks || []) {
     const kind = `${task.type || ''} ${task.name || ''}`;
-    const { icon, name: cls } = M.classFor(cfg.theme, kind);
+    const { icon, name: cls } = M.classFor(cfg.theme, kind, task.id);
     const verb = VERB[cls] || 'working';
     const done = /complete|done|finished/i.test(task.status || '');
     const failed = /fail|error|kill|cancel/i.test(task.status || '');

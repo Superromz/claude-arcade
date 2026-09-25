@@ -26,6 +26,8 @@ function main() {
   L.withLock(() => {
     const state = L.loadState();
     const ses = L.session(state, sid);
+    const proj = L.project(state, input.cwd);
+    if (proj) ses.project = proj.path;
     state.pending ||= [];
     const levelBefore = L.levelFor(state.xp);
     const now = Date.now();
@@ -34,7 +36,7 @@ function main() {
     // A late background tool event must not wipe the end-of-turn victory pose.
     const settled = ses.mode === 'victory' && now - ses.since < 3000;
     const set = (mode, detail = '') => { if (settled && event.includes('ToolUse')) return; ses.mode = mode; ses.detail = detail; ses.since = now; };
-    const gain = (n) => { state.xp += n; ses.xp += n; turn.xp += n; };
+    const gain = (n) => { state.xp += n; ses.xp += n; turn.xp += n; if (proj) proj.xp += n; };
     const log = (kind, text, extra = {}) => L.logEvent({ sid, kind, text, ...extra });
 
     // XP from real token usage, read incrementally from the transcripts.
@@ -45,6 +47,7 @@ function main() {
       if (!u.input && !u.output) return 0;
       state.tokens.input += u.input;
       state.tokens.output += u.output;
+      if (proj) { proj.tokens.input += u.input; proj.tokens.output += u.output; }
       const earned = C.tokenXp(state.tokens) - (state.tokenXp || 0);
       state.tokenXp = (state.tokenXp || 0) + earned;
       gain(earned);
@@ -59,6 +62,7 @@ function main() {
           state.streak.day = today;
         }
         L.pruneSessions(state);
+        if (proj && (input.source === 'startup' || input.source === 'resume')) proj.sessions += 1;
         set('idle');
         const lvl = L.levelFor(state.xp);
         const msg = M.say(th, 'welcome', { lvl, title: L.titleFor(t, lvl), name: '', streak: state.streak.count }).replace(/\s+/g, ' ');
@@ -88,6 +92,7 @@ function main() {
       case 'PostToolUse': {
         const mode = L.modeForTool(input.tool_name);
         state.tools[mode] = (state.tools[mode] || 0) + 1;
+        if (proj) proj.tools[mode] = (proj.tools[mode] || 0) + 1;
         turn[mode] = (turn[mode] || 0) + 1;
         ses.combo += 1;
         gain(C.xpFor(hero, mode, L.TOOL_XP[mode] || 1, ses.combo)); // class + combo bonus
@@ -111,9 +116,10 @@ function main() {
       case 'SubagentStart': {
         const id = input.agent_id || String(now);
         const type = input.agent_type || 'agent';
-        const cls = M.classFor(th, type);
-        ses.party[id] = { type, cls: cls.name, icon: cls.icon, since: now };
+        const cls = M.classFor(th, type, id);
+        ses.party[id] = { type, cls: cls.id, name: cls.name, icon: cls.icon, since: now };
         state.tools.summoning = (state.tools.summoning || 0) + 1;
+        if (proj) proj.tools.summoning = (proj.tools.summoning || 0) + 1;
         turn.summoning = (turn.summoning || 0) + 1;
         gain(L.TOOL_XP.summoning);
         set('summoning', type);
@@ -130,7 +136,7 @@ function main() {
         else delete ses.party[Object.keys(ses.party)[0]];
         gain(5);
         if (input.agent_transcript_path) addTokens(input.agent_transcript_path, `agent:${input.agent_id}`);
-        if (member) log('return', `${member.icon} The ${member.cls} returns with news. +5 ${t.xpLabel}`);
+        if (member) log('return', `${member.icon} The ${member.name || member.cls} returns with news. +5 ${t.xpLabel}`);
         break;
       }
       case 'Notification':
@@ -143,6 +149,7 @@ function main() {
         break;
       case 'Stop': {
         state.quests += 1;
+        if (proj) proj.quests += 1;
         ses.hp = Math.min(100, ses.hp + 20);
         gain(10);
         const tokXp = addTokens(input.transcript_path, sid);

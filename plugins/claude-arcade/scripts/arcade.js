@@ -120,10 +120,26 @@ function stats() {
     `Edits forged: ${s.tools.editing || 0}   Commands cast: ${s.tools.running || 0}   Scouting: ${(s.tools.reading || 0) + (s.tools.searching || 0)}`,
     `Web scrying: ${s.tools.web || 0}   Party summons: ${s.tools.summoning || 0}   Plans drawn: ${s.tools.planning || 0}`,
     '',
+    ...projectTable(s),
+    '',
     `ACHIEVEMENTS (${got.size}/${L.ACHIEVEMENTS.length})`,
     ...L.ACHIEVEMENTS.map((a) => `${got.has(a.id) ? '[x]' : '[ ]'} ${a.name} â€” ${a.desc}`),
   ];
   console.log(lines.join('\n'));
+}
+
+// Per-project leaderboard, most XP first.
+function projectTable(s) {
+  const rows = Object.values(s.projects || {}).sort((a, b) => b.xp - a.xp);
+  if (!rows.length) return ['PROJECTS', '(none yet — stats start with your next session)'];
+  const fmt = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n));
+  const w = Math.min(24, Math.max(7, ...rows.map((p) => p.name.length)));
+  const out = [`PROJECTS (${rows.length})`, `${'Project'.padEnd(w)}  ${'XP'.padStart(7)}  ${'Quests'.padStart(6)}  ${'Edits'.padStart(5)}  ${'Cmds'.padStart(5)}  ${'Agents'.padStart(6)}  ${'Tokens'.padStart(7)}  Last active`];
+  for (const p of rows) {
+    const t = p.tools || {};
+    out.push(`${p.name.slice(0, w).padEnd(w)}  ${String(p.xp).padStart(7)}  ${String(p.quests).padStart(6)}  ${String(t.editing || 0).padStart(5)}  ${String(t.running || 0).padStart(5)}  ${String(t.summoning || 0).padStart(6)}  ${fmt((p.tokens || {}).output || 0).padStart(7)}  ${new Date(p.lastSeen).toISOString().slice(0, 10)}`);
+  }
+  return out;
 }
 
 function toggle(key) {

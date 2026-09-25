@@ -5,12 +5,12 @@
 const fs = require('fs');
 
 const CLASSES = {
-  mage: { name: 'Mage', head: 'wizard', weapon: 'staff', specialty: ['running'], stat: 'INT', primary: 'royal', secondary: 'violet', accessory: 'beard', desc: 'Commands are spells. +50% XP from running commands.' },
-  ranger: { name: 'Ranger', head: 'hood', weapon: 'bow', specialty: ['reading', 'searching'], stat: 'DEX', primary: 'forest', secondary: 'forest', accessory: 'cape', desc: 'Sees everything. +50% XP from reading and searching.' },
-  knight: { name: 'Knight', head: 'helm', weapon: 'sword', specialty: ['editing'], stat: 'STR', primary: 'charcoal', secondary: 'crimson', accessory: 'cape', desc: 'Forges code. +50% XP from edits.' },
-  warlock: { name: 'Warlock', head: 'horns', weapon: 'familiar', specialty: ['summoning'], stat: 'CHA', primary: 'violet', secondary: 'charcoal', accessory: 'none', desc: 'Commands a legion. +50% XP from summoning agents.' },
-  bard: { name: 'Bard', head: 'cap', weapon: 'lute', specialty: ['web', 'planning'], stat: 'WIS', primary: 'crimson', secondary: 'gold', accessory: 'scarf', desc: 'Knows every tale. +50% XP from web, MCP and planning.' },
-  rogue: { name: 'Rogue', head: 'mask', weapon: 'daggers', specialty: [], stat: 'DEX', primary: 'charcoal', secondary: 'teal', accessory: 'scarf', desc: 'Strikes fast. Combo bonuses are doubled.' },
+  mage: { name: 'Mage', role: 'Area blasts that hit every nearby monster', icon: '🧙', head: 'wizard', weapon: 'staff', specialty: ['running'], stat: 'INT', primary: 'royal', secondary: 'violet', accessory: 'beard', desc: 'Commands are spells. +50% XP from running commands.' },
+  ranger: { name: 'Ranger', role: 'Strikes first with high crit chance', icon: '🏹', head: 'hood', weapon: 'bow', specialty: ['reading', 'searching'], stat: 'DEX', primary: 'forest', secondary: 'forest', accessory: 'cape', desc: 'Sees everything. +50% XP from reading and searching.' },
+  knight: { name: 'Knight', role: 'Taunts monsters and shields the hero', icon: '🛡', head: 'helm', weapon: 'sword', specialty: ['editing'], stat: 'STR', primary: 'charcoal', secondary: 'crimson', accessory: 'cape', desc: 'Forges code. +50% XP from edits.' },
+  warlock: { name: 'Warlock', role: 'Curses that deal damage over time', icon: '🔮', head: 'horns', weapon: 'familiar', specialty: ['summoning'], stat: 'CHA', primary: 'violet', secondary: 'charcoal', accessory: 'none', desc: 'Commands a legion. +50% XP from summoning agents.' },
+  bard: { name: 'Bard', role: 'Inspires the party: +20% damage for all', icon: '🎵', head: 'cap', weapon: 'lute', specialty: ['web', 'planning'], stat: 'WIS', primary: 'crimson', secondary: 'gold', accessory: 'scarf', desc: 'Knows every tale. +50% XP from web, MCP and planning.' },
+  rogue: { name: 'Rogue', role: 'Backstab bursts on a single target', icon: '🗡', head: 'mask', weapon: 'daggers', specialty: [], stat: 'DEX', primary: 'charcoal', secondary: 'teal', accessory: 'scarf', desc: 'Strikes fast. Combo bonuses are doubled.' },
 };
 
 const COLORS = {

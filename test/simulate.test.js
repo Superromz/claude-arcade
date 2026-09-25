@@ -151,6 +151,30 @@ test('stop hook awards token XP from the transcript', () => {
   assert.strictEqual(state().tokens.output, 1500);
 });
 
+test('stats are tracked per project (git root) as well as globally', () => {
+  const repo = path.join(home, 'work', 'my-app');
+  fs.mkdirSync(path.join(repo, '.git'), { recursive: true });
+  fs.mkdirSync(path.join(repo, 'src', 'deep'), { recursive: true });
+  const other = path.join(home, 'work', 'notes');
+  fs.mkdirSync(other, { recursive: true });
+  const before = state().xp;
+  hook('SessionStart', { session_id: 'p1', source: 'startup', cwd: path.join(repo, 'src', 'deep') });
+  hook('PostToolUse', { session_id: 'p1', tool_name: 'Edit', cwd: path.join(repo, 'src') });
+  hook('Stop', { session_id: 'p1', cwd: repo });
+  hook('PostToolUse', { session_id: 'p2', tool_name: 'Bash', cwd: other });
+  const s = state();
+  const projects = Object.values(s.projects);
+  const app = projects.find((p) => p.name === 'my-app');
+  const notes = projects.find((p) => p.name === 'notes');
+  assert.ok(app && notes);
+  assert.strictEqual(app.tools.editing, 1);
+  assert.strictEqual(app.quests, 1);
+  assert.strictEqual(app.sessions, 1);
+  assert.strictEqual(notes.tools.running, 1);
+  assert.strictEqual(s.xp - before, app.xp + notes.xp); // global = sum of this activity
+  assert.match(run('arcade.js', {}, ['stats']), /PROJECTS[\s\S]*my-app[\s\S]*notes/);
+});
+
 test('setup and uninstall round-trip user settings', () => {
   const settingsFile = path.join(home, '.claude', 'settings.json');
   fs.writeFileSync(settingsFile, JSON.stringify({ model: 'opus', statusLine: { type: 'command', command: 'mine' } }));

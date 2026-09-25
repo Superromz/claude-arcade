@@ -26,12 +26,12 @@ const MESSAGES = {
     ],
     achievement: ['🏅 Achievement unlocked: {name} — {desc}', '🏅 A new trophy for the wall: {name} ({desc})'],
     summon: {
-      Ranger: ['🏹 A Ranger slips out of the shadows to scout: {desc}', '🏹 The Ranger nocks an arrow and heads off: {desc}'],
-      Sage: ['📜 A Sage unrolls the ancient maps: {desc}', '📜 The Sage strokes their beard and begins plotting: {desc}'],
-      Paladin: ['🛡 A Paladin swears an oath to inspect: {desc}', '🛡 The Paladin raises their shield: {desc}'],
-      Warrior: ['⚔ A Warrior charges into battle: {desc}', '⚔ The Warrior cracks their knuckles: {desc}'],
-      Scholar: ['📚 A Scholar vanishes into the library: {desc}', '📚 The Scholar adjusts their spectacles: {desc}'],
       Mage: ['🧙 A Mage answers the summons: {desc}', '🧙 Arcane smoke clears — a Mage appears: {desc}'],
+      Ranger: ['🏹 A Ranger slips out of the shadows to scout: {desc}', '🏹 The Ranger nocks an arrow and heads off: {desc}'],
+      Knight: ['🛡 A Knight raises their shield: {desc}', '🛡 A Knight swears an oath to protect you: {desc}'],
+      Warlock: ['🔮 A Warlock steps from a violet rift: {desc}', '🔮 The Warlock mutters a dark pact: {desc}'],
+      Bard: ['🎵 A Bard strikes a rousing chord: {desc}', '🎵 A Bard joins, humming a battle hymn: {desc}'],
+      Rogue: ['🗡 A Rogue drops from the rafters: {desc}', '🗡 A Rogue flips a dagger and grins: {desc}'],
     },
     partyFull: ['The party is {n} strong!', '{n} heroes march together!'],
     faint: ['💀 You fainted! A passing cleric revives you at full HP.', '💀 Knocked out! You wake up in the tavern, fully healed.'],
@@ -65,23 +65,32 @@ const MESSAGES = {
   },
 };
 
-// Agent class per theme, picked from the agent type / name.
-const CLASSES = {
-  rpg: [
-    [/explore|search|find/i, '🏹', 'Ranger'], [/plan|architect/i, '📜', 'Sage'],
-    [/review|audit|security/i, '🛡', 'Paladin'], [/test|debug|fix/i, '⚔', 'Warrior'],
-    [/guide|doc|research/i, '📚', 'Scholar'], [/.*/, '🧙', 'Mage'],
-  ],
-  space: [
-    [/explore|search|find/i, '🔭', 'Scout'], [/plan|architect/i, '🧭', 'Navigator'],
-    [/review|audit|security/i, '🛡', 'Security'], [/.*/, '🛸', 'Drone'],
-  ],
-  retro: [[/explore|search|find/i, '[S]', 'SCOUT'], [/plan|architect/i, '[P]', 'PLANNER'], [/.*/, '[2P]', 'PLAYER']],
+// Agents join as one of the six hero classes. The agent's role picks the
+// class; general-purpose agents get one from a hash of their id, so a batch
+// of them becomes a mixed party.
+const COMPANION_ROLES = [
+  [/explore|search|find|scout/i, 'ranger'],
+  [/review|audit|security|test|verif|qa/i, 'knight'],
+  [/plan|architect|design|workflow/i, 'warlock'],
+  [/guide|doc|research|writ|summar/i, 'bard'],
+  [/debug|fix|bash|shell|ops|deploy/i, 'rogue'],
+];
+const CLASS_IDS = ['mage', 'ranger', 'knight', 'warlock', 'bard', 'rogue'];
+const CLASS_INFO = {
+  mage: ['🧙', 'Mage'], ranger: ['🏹', 'Ranger'], knight: ['🛡', 'Knight'],
+  warlock: ['🔮', 'Warlock'], bard: ['🎵', 'Bard'], rogue: ['🗡', 'Rogue'],
 };
 
-function classFor(themeName, kind) {
-  const [, icon, name] = (CLASSES[themeName] || CLASSES.rpg).find(([re]) => re.test(kind || ''));
-  return { icon, name };
+function classFor(themeName, kind, id = '') {
+  const hit = COMPANION_ROLES.find(([re]) => re.test(kind || ''));
+  let cls = hit && hit[1];
+  if (!cls) {
+    let h = 0;
+    for (const ch of String(id || kind)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    cls = CLASS_IDS[h % CLASS_IDS.length];
+  }
+  const [icon, name] = CLASS_INFO[cls];
+  return { id: cls, icon: themeName === 'retro' ? `[${name[0]}]` : icon, name: themeName === 'retro' ? name.toUpperCase() : name };
 }
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
