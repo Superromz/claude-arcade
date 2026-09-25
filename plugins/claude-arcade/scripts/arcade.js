@@ -88,7 +88,8 @@ function play() {
     return;
   }
   let copied = false;
-  try {
+  // ARCADE_NO_CLIPBOARD keeps tests (and scripts) off the user's clipboard.
+  if (!process.env.ARCADE_NO_CLIPBOARD) try {
     const clip = process.platform === 'win32' ? 'clip' : process.platform === 'darwin' ? 'pbcopy' : 'xclip -selection clipboard';
     execSync(clip, { input: cmd, stdio: ['pipe', 'ignore', 'ignore'] });
     copied = true;
