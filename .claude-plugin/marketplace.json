@@ -9,7 +9,7 @@
       "name": "claude-arcade",
       "source": "./plugins/claude-arcade",
       "description": "Turn Claude Code into a game: create a hero that levels up from your real Claude usage. Monsters attack while Claude works, agents fight as companions, and every prompt is a quest.",
-      "version": "0.5.0"
+      "version": "0.6.0"
     }
   ]
 }

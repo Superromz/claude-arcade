@@ -1,7 +1,8 @@
 'use strict';
 // Shop tab: spend battle gold on cosmetics (shown on the hero) and battle
-// buffs. Cards are grouped by slot; the left panel previews the hero wearing
-// the selected item.
+// buffs, and craft chest-only items from the materials chests drop. Cards
+// are grouped by slot; the left panel previews the hero wearing the selected
+// item.
 
 const L = require('./lib');
 const X = require('./pixel');
@@ -22,6 +23,14 @@ const inSlot = (slot) => I.CATALOG.filter((it) => it.slot === slot);
 
 const inventory = (state) => ((state && state.game && state.game.inventory) || []).slice();
 const owns = (state, id) => inventory(state).includes(id);
+const materials = (state) => ({ ...((state && state.game && state.game.materials) || {}) });
+
+// What a recipe still needs: [{ id, name, need, have, color }].
+function recipe(it, state) {
+  const have = materials(state);
+  return Object.entries(it.craft || {}).map(([id, need]) => ({ id, need, have: have[id] || 0, ...I.getMaterial(id) }));
+}
+const canCraft = (it, state) => !!it.craft && recipe(it, state).every((m) => m.have >= m.need);
 
 function note(text, good = false) { shop().msg = { text, good, until: ui.tick + 30 }; }
 
@@ -30,6 +39,7 @@ function note(text, good = false) { shop().msg = { text, good, until: ui.tick + 
 function buy(id, d) {
   const it = I.getItem(id);
   if (!it) return false;
+  if (it.loot) { note(it.craft ? 'Craft it from materials' : 'Found in chests only'); return false; }
   if (it.slot !== 'buff' && owns(d.state, id)) return false;
   const gold = ui.battle.gold || 0;
   if (gold < it.price) { note(`Need ◉ ${it.price - gold} more gold`); return false; }
@@ -47,6 +57,34 @@ function buy(id, d) {
   if (it.slot === 'buff') I.addBuff(id); else equip(id, d);
   ui.celebrate = { kind: 'purchase', text: `Got ${it.name}!`, until: ui.tick + 20 };
   note(`Got ${it.name}!`, true);
+  return true;
+}
+
+// Craft a chest-only item from materials (state.game.materials) and equip
+// it. Returns true on success. Never touches gold or XP.
+function craft(id, d) {
+  const it = I.getItem(id);
+  if (!it || !it.loot || !it.craft || it.slot === 'buff' || owns(d.state, id)) return false;
+  const short = recipe(it, d.state).find((m) => m.have < m.need);
+  if (short) { note(`Need ${short.need - short.have} more ${short.name}`); return false; }
+  let ok = false;
+  L.withLock(() => {
+    const st = L.loadState();
+    const game = { ...(st.game || {}) };
+    const mats = { ...(game.materials || {}) };
+    if (!Object.entries(it.craft).every(([m, n]) => (mats[m] || 0) >= n)) return;
+    for (const [m, n] of Object.entries(it.craft)) mats[m] -= n;
+    game.materials = mats;
+    game.inventory = [...new Set([...inventory(st), id])];
+    st.game = game;
+    L.saveState(st);
+    d.state = st;
+    ok = true;
+  });
+  if (!ok) return false;
+  equip(id, d);
+  ui.celebrate = { kind: 'purchase', text: `Crafted ${it.name}!`, until: ui.tick + 20 };
+  note(`Crafted ${it.name}!`, true);
   return true;
 }
 
@@ -102,7 +140,8 @@ function shopKey(key, d) {
   if (dirs[key]) { move(dirs[key]); return true; }
   const it = I.CATALOG[shop().sel] || I.CATALOG[0];
   if (key === '\r' || key === '\n') {
-    if (it.slot === 'buff' || !owns(d.state, it.id)) buy(it.id, d);
+    if (it.loot && !owns(d.state, it.id)) { if (it.slot === 'buff' || !it.craft) note('Found in chests only'); else craft(it.id, d); }
+    else if (it.slot === 'buff' || !owns(d.state, it.id)) buy(it.id, d);
     else if (((d.hero && d.hero.equipped) || {})[it.slot] === it.id) { unequip(it.slot, d); note(`Unequipped ${it.name}`); }
     else { equip(it.id, d); note(`Equipped ${it.name}`, true); }
     return true;
@@ -125,8 +164,15 @@ function wrap(text, w) {
   return out;
 }
 
+// Compact recipe for a card: "◆6 ◆2" in material colors.
+const recipeParts = (it, d, pal) => recipe(it, d.state).flatMap((m, i) => [[`${i ? ' ' : ''}◆`, m.color, true], [`${m.need}`, m.have >= m.need ? pal.text : pal.bad]]);
+
 function cardState(it, d, pal) {
   const eq = ((d.hero && d.hero.equipped) || {})[it.slot] === it.id;
+  if (it.loot && !owns(d.state, it.id) && !eq) {
+    if (it.slot === 'buff' || !it.craft) return [['✦ Found in chests', pal.magic]];
+    return [['Craft ', canCraft(it, d.state) ? pal.good : pal.dim, true], ...recipeParts(it, d, pal)];
+  }
   if (it.slot === 'buff') {
     const active = I.buffs().find((b) => b.id === it.id);
     return [[`◉ ${it.price}`, (ui.battle.gold || 0) >= it.price ? pal.gold : pal.bad, true], [active ? `  ${active.waves} wave${active.waves > 1 ? 's' : ''} left` : '', pal.good]];
@@ -164,11 +210,15 @@ function previewPanel(d, pal, w, h, it) {
   SP.drawHero(pc, ch, eq.pet ? 13 : 7, 1, { t: ui.tick, pose: (ui.tick >> 5) % 4 === 3 ? 'cheer' : 'stand' });
   out.push(...pc.lines());
   out.push(panelLine(w, pal.panel2, [[` ${it.name}`, rc, true]]));
-  out.push(panelLine(w, pal.panel, [[` ${I.RARITY[it.rarity].name}`, rc], [` · ${I.SLOT_NAMES[it.slot]}`, pal.dim]]));
-  out.push(panelLine(w, pal.panel, [[' ', pal.dim], ...cardState(it, d, pal)]));
-  for (const l of wrap(it.desc, w - 2).slice(0, 2)) out.push(panelLine(w, pal.panel, [[` ${l}`, pal.text]]));
+  const setInfo = it.set ? [[` · ${it.set} set`, (I.SETS[it.set] || {}).color || pal.dim]] : [];
+  out.push(panelLine(w, pal.panel, [[` ${I.RARITY[it.rarity].name}`, rc], [` · ${I.SLOT_NAMES[it.slot]}`, pal.dim], ...setInfo]));
   const owned = owns(d.state, it.id), on = eq[it.slot] === it.id && ((d.hero.equipped || {})[it.slot] === it.id);
-  const action = it.slot === 'buff' ? 'Enter buy' : !owned ? 'Enter buy' : on ? 'Enter unequip' : 'Enter equip';
+  if (it.loot && !owned && it.craft) {
+    out.push(panelLine(w, pal.panel, [[' Recipe ', pal.dim], ...recipe(it, d.state).flatMap((m) => [[`◆`, m.color, true], [`${m.have}/${m.need} `, m.have >= m.need ? pal.good : pal.bad]])]));
+    out.push(panelLine(w, pal.panel, [[` ${recipe(it, d.state).map((m) => m.name).join(', ')}`, pal.dim]]));
+  } else out.push(panelLine(w, pal.panel, [[' ', pal.dim], ...cardState(it, d, pal)]));
+  for (const l of wrap(it.desc, w - 2).slice(0, 2)) out.push(panelLine(w, pal.panel, [[` ${l}`, pal.text]]));
+  const action = it.loot && !owned ? (it.craft && it.slot !== 'buff' ? 'Enter craft' : 'Win it from chests') : it.slot === 'buff' ? 'Enter buy' : !owned ? 'Enter buy' : on ? 'Enter unequip' : 'Enter equip';
   out.push(panelLine(w, pal.panel, [[` ${action}`, pal.accent, true], [it.slot !== 'buff' ? ' · u unequip' : '', pal.dim]]));
   while (out.length < h) out.push(panelLine(w, pal.panel, []));
   return out.slice(0, h);
@@ -183,7 +233,9 @@ function shopTab(d, pal, W, h = 20) {
 
   // Header: slot tabs + gold.
   const tabs = I.SLOTS.map((slot) => [` ${I.SLOT_NAMES[slot]} `, slot === it.slot ? pal.accent : pal.dim, slot === it.slot]);
-  out.push(panelLine(W, pal.panel2, [[' SHOP ', pal.accent, true], ...tabs], [[`◉ ${gold} gold `, pal.gold, true]]));
+  const mats = materials(d.state);
+  const matParts = I.MATERIALS.flatMap((m) => [['◆', m.color, true], [`${mats[m.id] || 0} `, pal.text]]);
+  out.push(panelLine(W, pal.panel2, [[' SHOP ', pal.accent, true], ...tabs], [...(W >= 110 ? matParts : []), [`◉ ${gold} gold `, pal.gold, true]]));
 
   const bodyH = Math.max(0, h - 2);
   const pw = W >= 70 ? PREVIEW_W : 0;
@@ -213,7 +265,8 @@ function shopTab(d, pal, W, h = 20) {
   // Footer: status message or key help.
   const m = s.msg && s.msg.until > ui.tick ? s.msg : null;
   const buffs = I.buffs().map((b) => `${(I.getItem(b.id) || {}).name} ${b.waves}w`).join(', ');
-  out.push(panelLine(W, pal.panel2, m ? [[` ${m.text}`, m.good ? pal.good : pal.bad, true]] : [[' ←↑↓→ browse · Enter buy/equip · u unequip', pal.dim]], buffs ? [[`active: ${buffs} `, pal.magic]] : []));
+  const footRight = buffs ? [[`active: ${buffs} `, pal.magic]] : W < 110 ? matParts : [];
+  out.push(panelLine(W, pal.panel2, m ? [[` ${m.text}`, m.good ? pal.good : pal.bad, true]] : [[' ←↑↓→ browse · Enter buy/craft/equip · u unequip', pal.dim]], footRight));
   return out.slice(0, Math.max(h, 1)).map((l) => (L.visWidth(l) === W ? l : fit(l, W, pal)));
 }
 
@@ -224,4 +277,4 @@ function fit(line, W, pal) {
   return panelLine(W, pal.panel, [[truncVis(line.replace(/\x1b\[[0-9;]*m/g, ''), W), pal.text]]);
 }
 
-module.exports = { shopTab, shopKey, buy, equip, unequip, inventory };
+module.exports = { shopTab, shopKey, buy, craft, recipe, materials, equip, unequip, inventory };

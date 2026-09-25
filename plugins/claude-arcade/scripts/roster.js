@@ -74,7 +74,7 @@ function card(h, selected, pal, height) {
 function rosterFrame(cols, rows) {
   const cfg = L.loadConfig(), state = L.loadState();
   const pal = UI[cfg.theme] || UI.rpg;
-  const W = Math.max(60, cols);
+  const W = Math.max(30, cols);
   const heroes = L.heroList(cfg, state);
   const r = ui.roster || (openRoster(), ui.roster);
   const slots = [...heroes, null];

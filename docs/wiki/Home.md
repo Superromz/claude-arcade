@@ -35,6 +35,7 @@ runs in the CLI, next to Claude, so it's something to play (or just watch) while
 | [Status Line and Toasts](Status-Line-and-Toasts) | The HUD under Claude's prompt and the messages it prints |
 | [In-Game Approvals](In-Game-Approvals) | Answering Claude's permission requests from the game |
 | [Project Stats](Project-Stats) | Stats per project, the Projects tab and the leaderboard |
+| [Loot and Chests](Loot-and-Chests) | Treasure chests after every wave and quest, materials and crafting |
 | [Shop](Shop) | Spend gold on cosmetics and battle buffs |
 | [Camp and Celebrations](Camp-and-Celebrations) | The idle camp, thought bubbles, hero animations and LEVEL UP banners |
 

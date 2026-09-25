@@ -117,7 +117,7 @@ function beginButton(sel, pal, w) {
 
 function creatorFrame(cols, rows, d) {
   const pal = UI[d.cfg.theme] || UI.rpg;
-  const W = Math.max(60, cols), ch = ui.create.ch;
+  const W = Math.max(30, cols), ch = ui.create.ch;
   const bar = P.darken(pal.panel, 0.35);
   const title = ui.create.title || 'Create your hero';
   const head = `${bg(bar)}${fg(pal.accent)}${BOLD} ◆ ${P.gradientText('CLAUDE ARCADE', pal.accent, pal.gold)}${NOBOLD}${fg(pal.dim)} · ${fg(pal.text)}${BOLD}${title}${NOBOLD}`;

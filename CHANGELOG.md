@@ -6,7 +6,10 @@ All notable changes to Claude Arcade are listed here, written for players. The f
 
 ## Unreleased
 
+## [0.6.0] - 2026-09-25
+
 ### Added
+- **Loot chests** after every wave and every finished prompt: Wooden to Legendary, rated by difficulty (tools, time, recovered failures, tokens, agents, bosses). Gold, gear, materials, buffs and rare legendaries, plus loot-only item sets and crafting in the Shop. Never XP.
 - **Class skills:** every class has its own five skills with their own effects (e.g. Knight: Shield Bash, Taunt, Whirlwind, Holy Strike, Judgment).
 - **Skill tree:** 3 branches per class with capstones, a point per level and per boss, gold respec (doubling), and endless paragon points. New Skills tab.
 - Bosses now rotate through each biome's pool, with occasional rematches.

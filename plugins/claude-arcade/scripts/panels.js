@@ -369,6 +369,9 @@ function partyTab(d, pal, W, h) {
 
 const RING = ['○', '◔', '◑', '◕', '●'];
 
+// 950, 9.9k, 12k, 1.2M, 12M: at most 4 characters, so counts fit a trophy card.
+const compact = (n) => (n < 1000 ? String(n) : n < 1e4 ? `${(n / 1e3).toFixed(1)}k` : n < 1e6 ? `${Math.round(n / 1e3)}k` : n < 1e7 ? `${(n / 1e6).toFixed(1)}M` : `${Math.round(n / 1e6)}M`);
+
 function badge(a, d, pal, w, got) {
   const v = Math.min(a.goal, a.value(d.state, d.ses) || 0);
   const done = got.has(a.id), ratio = done ? 1 : v / a.goal;
@@ -376,12 +379,12 @@ function badge(a, d, pal, w, got) {
   const icon = done ? '★' : RING[Math.min(3, Math.floor(ratio * 4))];
   const iconC = done ? pal.gold : ratio > 0 ? pal.magic : pal.dim;
   const inner = done ? X.mix(pal.panel, pal.gold, 0.06) : pal.panel;
-  const barW = Math.max(4, w - 4 - 8);
-  const count = `${done ? a.goal : v}/${a.goal}`;
+  const barW = Math.max(4, w - 4 - 10);
+  const count = `${compact(done ? a.goal : v)}/${compact(a.goal)}`;
   return [
     cardTop(w, pal, [[`${icon} `, iconC, true], [a.name, done ? pal.gold : pal.text, done]], [], { color: col }),
     cardRow(w, pal, [[a.desc, done ? pal.text : pal.dim]], [], { color: col, inner }),
-    cardRaw(w, pal, `${bg(inner)} ${thinBar(ratio, barW, done ? pal.accent : X.shade(pal.magic, 0.7), done ? pal.gold : pal.magic, X.mix(inner, pal.text, 0.12), inner)}${fg(done ? pal.gold : pal.text)} ${count.padStart(7)}`, { color: col, inner }),
+    cardRaw(w, pal, `${bg(inner)} ${thinBar(ratio, barW, done ? pal.accent : X.shade(pal.magic, 0.7), done ? pal.gold : pal.magic, X.mix(inner, pal.text, 0.12), inner)}${fg(done ? pal.gold : pal.text)} ${count.padStart(9)}`, { color: col, inner }),
     cardBottom(w, pal, [[done ? '✓ unlocked' : `${Math.round(ratio * 100)}%`, done ? pal.good : pal.dim, done]], { color: col }),
   ];
 }
@@ -390,7 +393,7 @@ function trophiesTab(d, pal, W) {
   const got = new Set(d.state.achievements);
   const total = L.ACHIEVEMENTS.length;
   const barW = Math.max(10, Math.min(30, W - 44));
-  const out = [padRaw(`${bg(pal.panel2)}${fg(pal.gold)}${BOLD} ★ TROPHY HALL ${NOBOLD} ${labelBar(got.size / total, barW, X.shade(pal.gold, 0.7), pal.gold, X.mix(pal.panel2, pal.text, 0.1), `${got.size}/${total} unlocked`, { ink: pal.ink, text: pal.text })}${bg(pal.panel2)}${fg(pal.dim)}  ${got.size === total ? 'every trophy won!' : 'keep questing to fill the hall'}`, W, pal.panel2)];
+  const out = W < 70 ? [panelLine(W, pal.panel2, [[' ★ TROPHIES ', pal.gold, true], [`${got.size}/${total} unlocked`, pal.dim]])] : [padRaw(`${bg(pal.panel2)}${fg(pal.gold)}${BOLD} ★ TROPHY HALL ${NOBOLD} ${labelBar(got.size / total, barW, X.shade(pal.gold, 0.7), pal.gold, X.mix(pal.panel2, pal.text, 0.1), `${got.size}/${total} unlocked`, { ink: pal.ink, text: pal.text })}${bg(pal.panel2)}${fg(pal.dim)}  ${got.size === total ? 'every trophy won!' : 'keep questing to fill the hall'}`, W, pal.panel2)];
   const cols = Math.max(1, Math.floor(W / 30)), cw = Math.floor(W / cols);
   const sorted = [...L.ACHIEVEMENTS].sort((a, b) => (got.has(b.id) ? 1 : 0) - (got.has(a.id) ? 1 : 0));
   for (let i = 0; i < sorted.length; i += cols) {
@@ -506,6 +509,7 @@ function header(d, pal, W) {
   if (logoW() + pillsW() > W) withName = false;
   if (logoW() + pillsW() > W) ps = pills(true);
   if (logoW() + pillsW() > W) gap = 0;
+  if (logoW() + pillsW() > W) ps = ps.filter((p) => p.on).map((p) => ({ ...p, name: `${p.name} ${ui.tab + 1}/${TABS.length}`, w: vis(` ${p.i + 1} ${p.name} ${ui.tab + 1}/${TABS.length} `) + 2 }));
   let s = `${bg(bar)}${fg(pal.accent)}${BOLD} ◆ ${gradientText('CLAUDE ARCADE', pal.accent, pal.gold)}${NOBOLD}`;
   if (withName) s += `${fg(pal.dim)} · ${t.name}`;
   const pw = pillsW();

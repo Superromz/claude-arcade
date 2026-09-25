@@ -99,6 +99,11 @@ Damage grows with your level and your class's main stat:
 - Damage buffs from the [Shop](Shop) (Whetstone, War Drum) multiply your hero's damage.
 - Fireball and Meteor leave a burn, and the Warlock's curse deals damage over time.
 
+## Chests
+
+Every cleared wave drops a small chest in the corner, and every finished quest drops a big one.
+Tougher waves and harder quests give better chests. See [Loot and Chests](Loot-and-Chests).
+
 ## Gold and kills
 
 - Every monster drops gold coins that fly to your hero. Tougher monsters drop more, quick chains of

@@ -20,6 +20,7 @@
 - [In-Game Approvals](In-Game-Approvals)
 - [Project Stats](Project-Stats)
 - [Shop](Shop)
+- [Loot and Chests](Loot-and-Chests)
 - [Camp and Celebrations](Camp-and-Celebrations)
 
 **More**

@@ -91,3 +91,10 @@ Items come in four rarities: Common, Rare, Epic and Legendary.
   Drum together give 1.25 × 1.5 damage.
 - Buffs last for the current game session. They're gone if you close the game pane, so buy them
   when you're about to fight.
+
+## Chest-only items and crafting
+
+Some items can't be bought. They're marked **✦ Found in chests** or show a **Craft** recipe instead
+of a price. Materials (Slime Gel, Bone Shard, Ember Core, Moonsilver Ore, Starlight Dust) come from
+[chests](Loot-and-Chests). Press **Enter** on a craftable item to spend the materials and equip it.
+Crafting costs no gold and never gives XP. Your materials show in the Shop header.

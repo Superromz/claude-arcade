@@ -1,6 +1,7 @@
 'use strict';
 // Shop items: cosmetics bought with gold that show on the hero, plus
-// consumable battle buffs. drawEquipment is called by sprites.drawHero right
+// consumable battle buffs, loot-only chest items (`loot: true`) and the
+// crafting materials chests drop. drawEquipment is called by sprites.drawHero right
 // after the body is drawn; "behind" layers (auras, wings, capes) only paint
 // pixels outside the hero's silhouette so they read as sitting behind it.
 
@@ -311,10 +312,187 @@ const BUFFS = [
     icon: { pal: { K, R: [200, 60, 60], r: [140, 40, 40], W: [240, 228, 200], Y: [236, 188, 64] }, rows: ['..K.........K...', '...K.......K....', '....KKKKKKKK....', '...KWWWWWWWWK...', '...KRYRRYRRYK...', '...KRRYRRYRRK...', '...KrrrrrrrrK...', '....KKKKKKKK....'] } },
 ];
 
+// ---------- chest loot (never sold; found in chests or crafted from materials) ----------
+
+// Crafting materials drop from chests and are stored as counts in
+// state.game.materials.
+const MATERIALS = [
+  { id: 'slime', name: 'Slime Gel', rarity: 'common', color: [110, 220, 110], value: 4 },
+  { id: 'bone', name: 'Bone Shard', rarity: 'common', color: [230, 222, 196], value: 5 },
+  { id: 'ember', name: 'Ember Core', rarity: 'rare', color: [255, 128, 40], value: 12 },
+  { id: 'moonsilver', name: 'Moonsilver Ore', rarity: 'epic', color: [150, 190, 255], value: 25 },
+  { id: 'starlight', name: 'Starlight Dust', rarity: 'legendary', color: [255, 226, 140], value: 45 },
+];
+const MATERIAL_BY_ID = Object.fromEntries(MATERIALS.map((m) => [m.id, m]));
+const getMaterial = (id) => MATERIAL_BY_ID[id] || null;
+
+// Four item sets. Every piece is loot-only: `loot: true` keeps it out of the
+// shop's buy list, `price` is its worth (a duplicate converts to part of it),
+// and `craft` is its recipe (no recipe = found in chests only).
+const SETS = {
+  Slimebound: { color: [110, 220, 110], desc: 'Gooey gear from the dungeon depths.' },
+  Bonecaller: { color: [214, 206, 180], desc: 'Relics of the restless dead.' },
+  Emberforged: { color: [255, 128, 40], desc: 'Tempered in the lava cave.' },
+  Starlight: { color: [150, 190, 255], desc: 'Woven from fallen stars.' },
+};
+
+const LOOT_HATS = [
+  { id: 'slimecrown', name: 'Slime Crown', price: 120, rarity: 'common', loot: true, set: 'Slimebound', craft: { slime: 6 }, desc: 'A slime that decided your head was home.',
+    pal: { K, G: [110, 220, 110], g: [60, 160, 70], W: [220, 255, 220], E: [20, 30, 20] },
+    rows: ['', '', '......KKKK......', '....KKGWGGKK....', '...KGWGGGGGGK...', '...KGGEGGEGGK...', '..KGGGGGGGGGGK..', '..KgGgGGGgGGgK..'],
+    anim(o, t) { // slow drips
+      const G = [110, 220, 110], g = [60, 160, 70];
+      [[3, 0], [7, 11], [11, 5]].forEach(([dx, k]) => { const n = ((t + k * 7) >> 2) % 6; for (let j = 0; j < Math.min(3, n); j++) o.set(dx, 8 + j, j === n - 1 ? G : g); });
+    } },
+  { id: 'skullhelm', name: 'Skull Helm', price: 300, rarity: 'rare', loot: true, set: 'Bonecaller', craft: { bone: 8, slime: 3 }, desc: 'Its eyes glow when a bug is near.',
+    pal: { K: [40, 30, 44], W: [236, 230, 210], w: [180, 170, 150], E: [40, 20, 40] },
+    rows: ['', '.....KKKKKK.....', '....KWWWWWWK....', '...KWWWWWWWwK...', '...KWEEWWEEwK...', '...KWEEWWEEwK...', '...KwWWKKWWwK...', '...KKWKWKWKKK...'],
+    anim(o, t) { const c = X.mix([60, 160, 80], [160, 255, 170], 0.5 + 0.5 * Math.sin(t * 0.3)); o.set(5, 5, c); o.set(9, 5, c); } },
+  { id: 'flamecrown', name: 'Flame Crown', price: 600, rarity: 'epic', loot: true, set: 'Emberforged', craft: { ember: 6, moonsilver: 2 }, desc: 'A circlet that never stops burning.',
+    pal: { K, Y: [255, 210, 70], y: [196, 136, 36], R: [232, 52, 40] },
+    rows: ['', '', '', '', '', '...KYYRYYRYYK...', '...KyyyyyyyyK...'],
+    anim(o, t) { // flickering flames rise from the band
+      const cols = [[255, 250, 200], [255, 214, 80], [255, 140, 40], [214, 60, 30]];
+      o.glow(7.5, 3, 6, [255, 140, 50], 0.25);
+      for (let dx = 4; dx <= 11; dx++) {
+        const h = 1 + Math.round(3 * X.hash(dx, t >> 1) * (dx % 3 === 1 ? 1 : 0.6));
+        for (let j = 0; j < h; j++) o.set(dx, 4 - j, cols[Math.min(3, j + (X.hash(dx + 9, t) > 0.7 ? 1 : 0))]);
+      }
+    } },
+  { id: 'starcirclet', name: 'Starlight Circlet', price: 1200, rarity: 'legendary', loot: true, set: 'Starlight', craft: { starlight: 8, moonsilver: 4 }, desc: 'A fallen star, politely orbiting you.',
+    pal: { K: [40, 44, 80], s: [226, 232, 255], S: [150, 160, 200], B: [110, 200, 255] },
+    rows: ['', '', '', '', '', '...KsssBBsssK...', '...KSSSSSSSSK...'],
+    anim(o, t) {
+      const b = Math.round(Math.sin(t * 0.2));
+      o.glow(7.5, 1 + b, 6, [200, 220, 255], 0.45);
+      const arm = X.mix([255, 226, 140], [255, 255, 255], 0.5 + 0.5 * Math.sin(t * 0.5));
+      [[7, 0], [8, 0], [6, 1], [9, 1], [7, 2], [8, 2]].forEach(([x, y]) => o.set(x, y + b, arm));
+      o.set(7, 1 + b, [255, 255, 255]); o.set(8, 1 + b, [255, 255, 255]);
+      for (let k = 0; k < 2; k++) { // two motes orbit the head
+        const a = t * 0.25 + k * Math.PI;
+        o.set(Math.round(7.5 + Math.cos(a) * 8), Math.round(6 + Math.sin(a) * 2), k ? [150, 200, 255] : [255, 236, 170]);
+      }
+    } },
+];
+
+// Feathered wings in any palette (the Angel Wings' shape).
+function wingsAt(o, t, colorAt, glow) {
+  const lift = [0, 1, 2, 1][(t >> 2) % 4];
+  WING_L.forEach((row, j) => {
+    for (let i = 0; i < row.length; i++) {
+      if (row[i] === '.') continue;
+      const c = colorAt(row[i], i, j);
+      o.behind(i - 6, 5 + lift + j, c);
+      o.behind(15 - (i - 6), 5 + lift + j, c);
+    }
+  });
+  if (glow) o.glowBehind(7.5, 11, 13, glow, 0.24);
+}
+
+const LOOT_BACKS = [
+  { id: 'bonewings', name: 'Bone Wings', price: 600, rarity: 'epic', loot: true, set: 'Bonecaller', craft: { bone: 16, moonsilver: 3 }, desc: 'They rattle ominously when you flap.', swatchY: 6,
+    draw(o, t) {
+      const pal = { K: [60, 50, 56], W: [236, 228, 208], w: [140, 130, 112] };
+      wingsAt(o, t, (k, i, j) => ((i + j) % 3 === 0 && k === 'W' ? pal.w : pal[k]), [140, 255, 170]);
+    } },
+  { id: 'phoenixwings', name: 'Phoenix Wings', price: 1200, rarity: 'legendary', loot: true, set: 'Emberforged', desc: 'Reborn from the ashes of a failed build.', swatchY: 6,
+    draw(o, t) {
+      const fire = [[255, 250, 200], [255, 214, 80], [255, 140, 40], [214, 60, 30]];
+      wingsAt(o, t, (k, i, j) => {
+        if (k === 'K') return [120, 30, 20];
+        return fire[Math.min(3, Math.max(0, Math.floor(j / 3 + X.hash(i, j + (t >> 1)) * 1.5 - 0.5)))];
+      }, [255, 140, 50]);
+      for (let k = 0; k < 4; k++) { // embers shed from the wing tips
+        const life = (t + k * 5) % 14, side = k % 2;
+        o.behind(side ? 18 + (life >> 2) : -3 - (life >> 2), 18 + (life >> 1), life < 6 ? fire[1] : fire[3]);
+      }
+    } },
+];
+
+const LOOT_AURAS = [
+  { id: 'staraura', name: 'Starlight Aura', price: 1200, rarity: 'legendary', loot: true, set: 'Starlight', desc: 'A pocket of night sky, full of stars.',
+    draw(o, t) {
+      o.field((dx, dy, d) => {
+        if (d > 4.5) return;
+        o.mixBehind(dx, dy, d < 2 ? [90, 100, 220] : [30, 30, 90], 0.55 * (1 - d / 5));
+        const h = X.hash(dx * 3 + 1, dy * 5 + 2);
+        if (h > 0.9) o.mixBehind(dx, dy, [255, 255, 255], 0.35 + 0.6 * Math.max(0, Math.sin(t * 0.35 + h * 40)));
+      });
+      const s = t % 40; // a shooting star now and then
+      if (s < 8) for (let k = 0; k < 3; k++) o.behind(-4 + s * 2 - k, -1 + s - k, X.mix([255, 255, 255], [120, 140, 255], k / 3));
+      o.rim([200, 210, 255], 0.35);
+    } },
+];
+
+const LOOT_PETS = [
+  { id: 'bonepup', name: 'Bone Pup', price: 300, rarity: 'rare', loot: true, set: 'Bonecaller', craft: { bone: 12, moonsilver: 1 }, desc: 'Good boy. Fetches its own femur.', ground: true,
+    draw(o, t) {
+      const pal = { K: [44, 36, 48], W: [236, 230, 210], w: [170, 160, 140], E: [120, 255, 140] };
+      const step = (t >> 2) % 2, wag = (t >> 1) % 2;
+      const rows = [
+        '.......KK..',
+        '......KWWK.',
+        wag ? 'K.....KWEWK' : '.K....KWEWK',
+        wag ? 'WK...KWWWK.' : 'KW...KWWWK.',
+        '.KWKWKWKK..',
+        '..KwWwWK...',
+        step ? '..W.W.W.W..' : '...W.W.W.W.',
+      ];
+      rowsAt(o, rows, pal, -12, 17);
+    } },
+  { id: 'emberling', name: 'Emberling', price: 600, rarity: 'epic', loot: true, set: 'Emberforged', craft: { ember: 10, moonsilver: 2 }, desc: 'A living spark. Do not pet.',
+    draw(o, t) {
+      const pal = { Y: [255, 236, 120], O: [255, 150, 40], R: [220, 60, 30], E: [60, 20, 10] };
+      const bob = Math.round(Math.sin(t * 0.3) * 1.5), fl = (t >> 1) % 2;
+      const rows = [fl ? '....Y...' : '...Y....', fl ? '...YY.Y.' : '..Y.YY..', '..YOOY..', '.YOOOOY.', 'YOEOOEOY', 'YORRRROY', '.YRRRRY.', '..YRRY..', '...RR...'];
+      o.glow(-7, 7 + bob, 6, [255, 140, 50], 0.35);
+      rowsAt(o, rows, pal, -11, 3 + bob);
+    } },
+  { id: 'starsprite', name: 'Star Sprite', price: 1200, rarity: 'legendary', loot: true, set: 'Starlight', craft: { starlight: 14, ember: 6 }, desc: 'Hums a tune only compilers can hear.',
+    draw(o, t) {
+      const bob = Math.round(Math.sin(t * 0.25) * 2), cx = -8, cy = 7 + bob;
+      for (let k = 1; k <= 4; k++) o.set(cx + k * 2, Math.round(cy + Math.sin((t - k * 2) * 0.25) * 2 + 1), X.mix([255, 226, 140], [60, 60, 120], k / 5));
+      o.glow(cx, cy, 6, [200, 220, 255], 0.5);
+      const flap = (t >> 1) % 2, wing = [170, 230, 255];
+      for (const s of [-1, 1]) { o.set(cx + 2 * s, cy - (flap ? 2 : 1), wing); o.set(cx + 3 * s, cy - (flap ? 3 : 1), wing); }
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(([a, b]) => o.set(cx + a, cy + b, [255, 226, 140]));
+      o.set(cx, cy, [255, 255, 255]);
+    } },
+];
+
+// A weapon glow with twinkling stars around the tip.
+function starGlow(core, hot, cold) {
+  const base = weaponGlow(core, hot, cold);
+  return function draw(o, t) {
+    base(o, t);
+    const [ax, ay] = weaponTip(o.ch, o.pose);
+    for (let k = 0; k < 3; k++) {
+      const ph = (t + k * 5) % 15, sx = ax + [-3, 3, 0][k], sy = ay + [-2, 0, -5][k];
+      if (ph > 5) continue;
+      o.set(sx, sy, [255, 255, 255]);
+      if (ph > 1 && ph < 4) [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, b]) => o.set(sx + a, sy + b, hot));
+    }
+  };
+}
+
+const LOOT_WEAPONS = [
+  { id: 'wslime', name: 'Slime Coat', price: 120, rarity: 'common', loot: true, set: 'Slimebound', craft: { slime: 8, bone: 2 }, desc: 'Sticky, green, surprisingly effective.', draw: weaponGlow([110, 220, 110], [220, 255, 220], [50, 140, 60]) },
+  { id: 'wbone', name: 'Grave Glow', price: 300, rarity: 'rare', loot: true, set: 'Bonecaller', craft: { bone: 10 }, desc: 'Ghostly green light from beyond.', draw: weaponGlow([120, 255, 150], [230, 255, 230], [30, 110, 60]) },
+  { id: 'wember', name: 'Ember Brand', price: 600, rarity: 'epic', loot: true, set: 'Emberforged', craft: { ember: 8 }, desc: 'White-hot at the core, like a fresh deploy.', draw: starGlow([255, 90, 30], [255, 240, 170], [150, 30, 20]) },
+  { id: 'wstar', name: 'Starlight Edge', price: 1200, rarity: 'legendary', loot: true, set: 'Starlight', craft: { starlight: 6, moonsilver: 3 }, desc: 'Leaves constellations where it swings.', draw: starGlow([170, 180, 255], [255, 255, 255], [100, 90, 220]) },
+];
+
+const POTION = (a, b) => ({ pal: { K, L: a, l: b, W: [255, 255, 255], c: [150, 110, 70] }, rows: ['', '.......KK.......', '......KccK......', '.......KK.......', '......KLLK......', '.....KLWLLK.....', '....KLWLLLLK....', '....KLLLLLlK....', '.....KllllK.....', '......KKKK......'] });
+const LOOT_BUFFS = [
+  { id: 'phoenixdraught', name: 'Phoenix Draught', price: 150, rarity: 'epic', loot: true, desc: 'Double damage for 2 waves.', buff: { dmg: 2, waves: 2 }, icon: POTION([255, 120, 40], [200, 50, 30]) },
+  { id: 'midastonic', name: 'Midas Tonic', price: 150, rarity: 'epic', loot: true, desc: 'Triple gold for 2 waves.', buff: { gold: 3, waves: 2 }, icon: POTION([255, 214, 80], [196, 136, 36]) },
+];
+
 const withSlot = (slot, list) => list.map((it) => ({ ...it, slot }));
 const CATALOG = [
-  ...withSlot('hat', HATS), ...withSlot('back', BACKS), ...withSlot('aura', AURAS),
-  ...withSlot('pet', PETS), ...withSlot('weapon', WEAPONS), ...withSlot('buff', BUFFS),
+  ...withSlot('hat', [...HATS, ...LOOT_HATS]), ...withSlot('back', [...BACKS, ...LOOT_BACKS]),
+  ...withSlot('aura', [...AURAS, ...LOOT_AURAS]), ...withSlot('pet', [...PETS, ...LOOT_PETS]),
+  ...withSlot('weapon', [...WEAPONS, ...LOOT_WEAPONS]), ...withSlot('buff', [...BUFFS, ...LOOT_BUFFS]),
 ];
 const BY_ID = Object.fromEntries(CATALOG.map((it) => [it.id, it]));
 const getItem = (id) => BY_ID[id] || null;
@@ -475,5 +653,6 @@ const goldMultiplier = () => buffs().reduce((m, b) => m * (buffOf(b).gold || 1),
 
 module.exports = {
   RARITY, SLOTS, SLOT_NAMES, CATALOG, getItem, equipped, drawEquipment, drawSwatch,
+  MATERIALS, getMaterial, SETS,
   buffs, addBuff, consumeWave, damageMultiplier, goldMultiplier,
 };

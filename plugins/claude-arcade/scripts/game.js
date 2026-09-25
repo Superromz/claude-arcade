@@ -28,6 +28,7 @@ const { projectsTab } = require('./projects');
 const { guildTab, guildKey } = require('./guild');
 const { bountiesTab, bountiesKey } = require('./bounties');
 const { skillsTab, skillsKey } = require('./skills');
+const { lootTick, lootOverlay, lootKey } = require('./loot');
 // Tab bodies by name, so TABS order can change freely.
 const TAB_FN = { Hero: heroTab, Skills: skillsTab, Party: partyTab, Guild: guildTab, Bounties: bountiesTab, Trophies: trophiesTab, Shop: shopTab, Projects: projectsTab };
 const { applyOverlay } = require('./celebrate');
@@ -40,6 +41,7 @@ function frame(cols, rows) {
   const d = snapshotData();
   if (ui.screen === 'roster') return rosterFrame(cols, rows);
   if (ui.screen === 'create') return creatorFrame(cols, rows, d);
+  lootTick(d); // before the scene steps the battle, so wave/quest ends are seen first
   const pal = UI[d.cfg.theme] || UI.rpg;
   const W = Math.max(50, cols);
   const out = header(d, pal, W);
@@ -81,7 +83,7 @@ function frame(cols, rows) {
     ? [['↑↓←→', 'select'], ['a', 'accept'], ['x', 'dismiss / release'], ['enter', 'fight / rest'], ['tab', 'view'], ['q', 'quit']]
     : [['1-6', 'cast'], ['click', 'strike'], ['w', 'wave'], ['tab', 'view'], ['h', 'heroes'], ['c', 'look'], ['t', 'theme'], ['g', 'HD'], ['p', sess], ['q', 'quit']];
   out.push(footer(pal, W, keys));
-  return applyOverlay(out, d, pal, W, rows);
+  return lootOverlay(applyOverlay(out, d, pal, W, rows), d, pal, W, rows);
 }
 
 // ---------- main loop ----------
@@ -146,6 +148,7 @@ function onKey(key) {
   const d = snapshotData();
   if (key === '\x03') return quit();
   if (approvalKey(key)) return render(true);
+  if (ui.screen === 'game' && lootKey(key)) return render(true);
   if (ui.screen === 'roster') { rosterAction(rosterKey(key), d); return render(true); }
   if (ui.screen === 'create') { creatorKey(key, d); return render(true); }
   if (key === 'h') { ui.dirty = true; saveProgress(); openRoster(); return render(true); }
